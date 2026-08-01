@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer } from "lucide-react";
+import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import DefineSalary from "./DefineSalary";
@@ -7,7 +7,7 @@ import PayslipPrint from "./PayslipPrint";
 import {
     getPayrollRuns, getPayrollSummary, generatePayroll,
     approvePayroll, markPayrollPaid, deletePayrollRun,
-    bulkApprovePayroll, bulkMarkPaid, getMyPayslips,
+    bulkApprovePayroll, bulkMarkPaid, getMyPayslips, addManualAdjustment,
 } from "../services/payrollService";
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
@@ -145,6 +145,66 @@ const SummaryCards = ({ summary }) => {
     );
 };
 
+// ── Adjustment Modal ──────────────────────────────────────────────────────────
+const AdjustmentModal = ({ run, onClose, onSave }) => {
+    const [name, setName] = useState("");
+    const [type, setType] = useState("earning");
+    const [amount, setAmount] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    if (!run) return null;
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setLoading(true);
+            await addManualAdjustment(run._id, { name, type, amount: Number(amount) });
+            toast.success("Adjustment added");
+            onSave();
+            onClose();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to add adjustment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                    <h2 className="text-base font-semibold text-gray-900">Manual Adjustment</h2>
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><X size={16} /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Description (e.g., Diwali Bonus)</label>
+                        <input type="text" required value={name} onChange={e => setName(e.target.value)}
+                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+                        <select value={type} onChange={e => setType(e.target.value)}
+                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="earning">Earning (+)</option>
+                            <option value="deduction">Deduction (-)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Amount (₹)</label>
+                        <input type="number" required min="1" value={amount} onChange={e => setAmount(e.target.value)}
+                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <button type="submit" disabled={loading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium transition disabled:opacity-60">
+                        {loading ? "Saving..." : "Save Adjustment"}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 // ── Admin View ────────────────────────────────────────────────────────────────
 const AdminPayroll = ({ can, company }) => {
     const [month, setMonth]       = useState(currentMonth());
@@ -154,6 +214,7 @@ const AdminPayroll = ({ can, company }) => {
     const [generating, setGenerating] = useState(false);
     const [selected, setSelected] = useState(null);
     const [expandedId, setExpandedId] = useState(null);
+    const [adjusting, setAdjusting] = useState(null);
 
     const load = useCallback(async (signal) => {
         try {
@@ -324,6 +385,12 @@ const AdminPayroll = ({ can, company }) => {
                                                 </button>
                                             )}
                                             {can("MANAGE_PAYROLL") && run.status === "draft" && (
+                                                <button onClick={() => setAdjusting(run)}
+                                                    className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition" title="Manual Edit">
+                                                    <Pencil size={14} />
+                                                </button>
+                                            )}
+                                            {can("MANAGE_PAYROLL") && run.status === "draft" && (
                                                 <button onClick={() => handleDelete(run._id)}
                                                     className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition" title="Delete">
                                                     <Trash2 size={14} />
@@ -360,6 +427,7 @@ const AdminPayroll = ({ can, company }) => {
             </div>
 
             <PayslipModal run={selected} company={company} onClose={() => setSelected(null)} />
+            <AdjustmentModal run={adjusting} onClose={() => setAdjusting(null)} onSave={load} />
         </div>
     );
 };

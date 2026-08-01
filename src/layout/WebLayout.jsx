@@ -10,6 +10,14 @@ function WebLayout() {
 
     if (!user) return <Navigate to="/auth/login" replace />;
 
+    // Intercept users who haven't completed onboarding
+    if (user.onboardingStatus === "pending_form") {
+        return <Navigate to="/onboarding" replace />;
+    }
+    if (user.onboardingStatus === "pending_approval") {
+        return <Navigate to="/onboarding/pending" replace />;
+    }
+
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />

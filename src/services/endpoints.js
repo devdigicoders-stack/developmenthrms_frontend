@@ -151,6 +151,7 @@ export const ENDPOINTS = {
     RUN_APPROVE: (id) => `/api/payroll/run/${id}/approve`,
     RUN_MARK_PAID: (id) => `/api/payroll/run/${id}/mark-paid`,
     RUN_DELETE: (id) => `/api/payroll/run/${id}`,
+    MANUAL_ADJUST: (id) => `/api/payroll/run/${id}/adjustment`,
     BULK_APPROVE:     `/api/payroll/run/bulk-approve`,
     BULK_MARK_PAID:   `/api/payroll/run/bulk-mark-paid`,
     SUMMARY:          `/api/payroll/summary`,
@@ -176,7 +177,7 @@ export const ENDPOINTS = {
     MY_HISTORY: `/api/tasks/my-history`,
     BY_PROJECT: (projectId) => `/api/tasks/project/${projectId}`,
     GET_BY_ID: (id) => `/api/tasks/${id}`,
-    UPDATE: (id) => `/api/tasks/${id}`,
+    COMPANY_UPDATE: (id) => `/company/${id}`,
     START_WORK: (id) => `/api/tasks/${id}/start`,
     DELETE: (id) => `/api/tasks/${id}`,
     COMMENT_ACCESS: (id) => `/api/tasks/${id}/comment-access`,
@@ -184,6 +185,12 @@ export const ENDPOINTS = {
     DELETE_COMMENT: (id, commentId) => `/api/tasks/${id}/comments/${commentId}`,
     ADD_ATTACHMENT: (id) => `/api/tasks/${id}/attachments`,
     DELETE_ATTACHMENT: (id, attId) => `/api/tasks/${id}/attachments/${attId}`,
+  },
+
+  ONBOARDING: {
+    SUBMIT: "/api/onboarding/submit",
+    REQUESTS: "/api/onboarding/requests",
+    APPROVE: (id) => `/api/onboarding/approve/${id}`,
   },
 
   LEAD: {

@@ -11,7 +11,10 @@ import { authlogout } from "../modules/auth/services/authService";
 const NAV = [
     {
         group: "Main",
-        items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/", permissions: [] }],
+        items: [
+            { name: "Dashboard", icon: LayoutDashboard, path: "/", permissions: [] },
+            { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [] }
+        ],
     },
     {
         group: "Organization",
@@ -19,7 +22,12 @@ const NAV = [
             { name: "Companies",   icon: Building2,    path: "/companies",      superAdminOnly: true },
             { name: "Departments", icon: FolderKanban, path: "/departments",    permissions: ["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"] },
             { name: "Roles",       icon: ShieldCheck,  path: "/settings/roles", permissions: ["VIEW_ROLE", "VIEW_ALL_ROLES"] },
+            { name: "Manage Policies", icon: ShieldCheck,  path: "/manage-policies", superAdminOnly: true },
+            { name: "Policies",    icon: FileText,     path: "/policies",       permissions: [] },
+            { name: "Manage NDA",  icon: ShieldCheck,  path: "/manage-nda",     superAdminOnly: true },
+            { name: "NDA",         icon: FileText,     path: "/nda",            permissions: [] },
             { name: "Employees",   icon: Users,        path: "/users",          permissions: ["VIEW_USER", "VIEW_ALL_USERS"] },
+            { name: "Onboarding Approvals", icon: UserCheck, path: "/onboarding-approvals", permissions: ["APPROVE_ONBOARDING", "MANAGE_USER"] },
         ],
     },
     {

@@ -23,6 +23,18 @@ import ProjectDetail from "../modules/projects/pages/ProjectDetail";
 import Leads from "../modules/leads/pages/Leads";
 import QuoteManagement from "../modules/quotes/pages/QuoteManagement";
 import PaymentAccounts from "../modules/quotes/pages/PaymentAccounts";
+import Policies from "../modules/policies/pages/Policies";
+import ManagePolicies from "../modules/policies/pages/ManagePolicies";
+import ViewNda from "../modules/nda/pages/ViewNda";
+import ManageNda from "../modules/nda/pages/ManageNda";
+
+// Onboarding imports
+import OnboardingLayout from "../layout/OnboardingLayout";
+import OnboardingForm from "../modules/onboarding/pages/OnboardingForm";
+import PendingApproval from "../modules/onboarding/pages/PendingApproval";
+import AdminApprovals from "../modules/onboarding/pages/AdminApprovals";
+
+import OfferLetter from "../modules/onboarding/pages/OfferLetter";
 
 const AppRoute = createBrowserRouter([
     {
@@ -32,9 +44,18 @@ const AppRoute = createBrowserRouter([
         ],
     },
     {
+        path: "/onboarding", element: <OnboardingLayout />,
+        children: [
+            { index: true, element: <OnboardingForm /> },
+            { path: "pending", element: <PendingApproval /> },
+        ],
+    },
+    {
         path: "/", element: <WebLayout />,
         children: [
             { index: true, element: <Home /> },
+            { path: "/onboarding-approvals", element: <AdminApprovals /> },
+            { path: "/offer-letter", element: <OfferLetter /> },
             { path: "/users", element: <User/> },
             {path:"/companies", element: <Company/>},
             {path:"/departments", element: <Department/>},
@@ -51,6 +72,10 @@ const AppRoute = createBrowserRouter([
             { path: "/leads", element: <Leads /> },
             { path: "/quotes", element: <QuoteManagement /> },
             { path: "/payment-accounts", element: <PaymentAccounts /> },
+            { path: "/policies", element: <Policies /> },
+            { path: "/manage-policies", element: <ManagePolicies /> },
+            { path: "/nda", element: <ViewNda /> },
+            { path: "/manage-nda", element: <ManageNda /> },
             { path: "/notifications", element: <Notifications /> },
             { path: "/settings", element: <Settings /> },
             { path: "/settings/roles", element: <Role /> },

@@ -19,6 +19,7 @@ export const markPayrollPaid    = (id)             => api.patch(P.RUN_MARK_PAID(
 export const deletePayrollRun   = (id)             => api.delete(P.RUN_DELETE(id)).then(r => r.data);
 export const bulkApprovePayroll = (month)          => api.patch(P.BULK_APPROVE, { month }).then(r => r.data);
 export const bulkMarkPaid       = (month)          => api.patch(P.BULK_MARK_PAID, { month }).then(r => r.data);
+export const addManualAdjustment = (id, data)      => api.patch(P.MANUAL_ADJUST(id), data).then(r => r.data);
 
 // Employee
 export const getMyPayslips = (signal) => api.get(P.MY, { signal }).then(r => r.data);

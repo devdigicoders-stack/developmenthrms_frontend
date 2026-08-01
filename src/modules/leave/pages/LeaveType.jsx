@@ -5,6 +5,7 @@ import { useStore } from "../../../context/StoreContext";
 import {
     getLeaveTypes, createLeaveType, updateLeaveType, deleteLeaveType,
 } from "../services/leaveService";
+import { fetchAllCompaniesForSuperAdmin } from "../../company/services/companyService";
 
 const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
@@ -15,7 +16,7 @@ const EMPTY = {
 };
 
 // ── Drawer ─────────────────────────────────────────────────────────────────────
-const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading }) => {
+const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperAdmin, companies }) => {
     const [form, setForm] = useState(EMPTY);
 
     useEffect(() => {
@@ -27,7 +28,8 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading }) => {
             isPaid: initial.isPaid ?? true,
             carryForward: initial.carryForward ?? false,
             maxCarryForward: initial.maxCarryForward ?? 0,
-        } : EMPTY);
+            companyId: initial.companyId?._id || initial.companyId || "",
+        } : { ...EMPTY, companyId: "" });
     }, [isOpen, initial]);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -35,6 +37,7 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading }) => {
     const handleSubmit = () => {
         if (!form.name.trim()) return toast.error("Name is required");
         if (!form.code.trim()) return toast.error("Code is required");
+        if (isSuperAdmin && !form.companyId) return toast.error("Company is required");
         onSubmit(form);
     };
 
@@ -76,6 +79,20 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading }) => {
                                 placeholder="e.g. CL" maxLength={10} className={inputCls} />
                         </div>
                     </div>
+                    
+                    {isSuperAdmin && (
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Company <span className="text-red-500">*</span>
+                            </label>
+                            <select value={form.companyId} onChange={e => set("companyId", e.target.value)} className={inputCls}>
+                                <option value="">Select Company</option>
+                                {companies.map(c => (
+                                    <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
@@ -154,11 +171,19 @@ const LeaveType = () => {
     const [loading, setLoading]   = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [companies, setCompanies] = useState([]);
 
-    const load = () =>
+    const load = () => {
         getLeaveTypes()
             .then(d => setTypes(d.leaveTypes || []))
             .catch(() => toast.error("Failed to load leave types"));
+        
+        if (isSuperAdmin) {
+            fetchAllCompaniesForSuperAdmin()
+                .then(d => setCompanies(d.companies || d || []))
+                .catch(() => {});
+        }
+    };
 
     useEffect(() => { load(); }, []);
 
@@ -303,6 +328,8 @@ const LeaveType = () => {
                 initial={selected}
                 onSubmit={selected ? handleUpdate : handleCreate}
                 loading={loading}
+                isSuperAdmin={isSuperAdmin}
+                companies={companies}
             />
         </div>
     );

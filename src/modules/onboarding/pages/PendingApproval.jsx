@@ -6,6 +6,10 @@ import { Navigate } from "react-router-dom";
 export default function PendingApproval() {
     const { user, setUser } = useStore();
 
+    const isSuperAdmin = user?.role?.name === "super_admin";
+    if (isSuperAdmin) {
+        return <div className="p-10 text-center font-bold">Super Admin does not require onboarding. <a href="/" className="text-blue-500 underline">Go to Dashboard</a></div>;
+    }
     if (user?.onboardingStatus === "approved") {
         return <Navigate to="/" replace />;
     }

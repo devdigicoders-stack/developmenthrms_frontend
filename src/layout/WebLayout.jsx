@@ -11,11 +11,14 @@ function WebLayout() {
     if (!user) return <Navigate to="/auth/login" replace />;
 
     // Intercept users who haven't completed onboarding
-    if (user.onboardingStatus === "pending_form") {
-        return <Navigate to="/onboarding" replace />;
-    }
-    if (user.onboardingStatus === "pending_approval") {
-        return <Navigate to="/onboarding/pending" replace />;
+    const isSuperAdmin = user?.role?.name === "super_admin";
+    if (!isSuperAdmin) {
+        if (user.onboardingStatus === "pending_form") {
+            return <Navigate to="/onboarding" replace />;
+        }
+        if (user.onboardingStatus === "pending_approval") {
+            return <Navigate to="/onboarding/pending" replace />;
+        }
     }
 
     return (

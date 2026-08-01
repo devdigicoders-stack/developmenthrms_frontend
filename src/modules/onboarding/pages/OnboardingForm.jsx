@@ -3,7 +3,17 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { useStore } from "../../../context/StoreContext";
 import { submitOnboarding } from "../../../services/onboardingService";
 import { toast } from "react-toastify";
-import { ChevronRight, ChevronLeft, Upload, CheckCircle2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Upload, CheckCircle2, User, FileText, Users, Briefcase } from "lucide-react";
+
+const InputField = ({ label, desc, required, children }) => (
+    <div className="flex flex-col gap-1.5">
+        <label className="text-[13px] font-semibold text-gray-700 flex items-center gap-1">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        {desc && <p className="text-[10px] text-gray-400 mt-[-4px]">{desc}</p>}
+        {children}
+    </div>
+);
 
 export default function OnboardingForm() {
     const { user, setUser } = useStore();
@@ -11,6 +21,8 @@ export default function OnboardingForm() {
     const [loading, setLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
 
+    const isSuperAdmin = user?.role?.name === "super_admin";
+    if (isSuperAdmin) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="bg-white p-10 rounded-2xl shadow-xl text-center font-bold text-gray-800">Super Admin does not require onboarding. <br/><a href="/" className="inline-block mt-4 text-white bg-black px-6 py-2 rounded-full hover:bg-gray-800 transition">Go to Dashboard</a></div></div>;
     if (user?.onboardingStatus === "approved") return <Navigate to="/" replace />;
     if (user?.onboardingStatus === "pending_approval") return <Navigate to="/onboarding/pending" replace />;
 
@@ -48,10 +60,9 @@ export default function OnboardingForm() {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Check if file is larger than 10MB (10 * 1024 * 1024)
             if (file.size > 10485760) {
                 toast.error(`File size is too large! Maximum allowed size is 10 MB. (Your file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`);
-                e.target.value = ""; // clear the input
+                e.target.value = "";
                 return;
             }
             setFiles({ ...files, [e.target.name]: file });
@@ -103,232 +114,274 @@ export default function OnboardingForm() {
     };
 
     const steps = [
-        { id: 1, name: "Personal Details" },
-        { id: 2, name: "Documents" },
-        { id: 3, name: "References" },
-        { id: 4, name: "Experience" }
+        { id: 1, name: "Personal", icon: User },
+        { id: 2, name: "Documents", icon: FileText },
+        { id: 3, name: "References", icon: Users },
+        { id: 4, name: "Experience", icon: Briefcase }
     ];
 
+
+    const inputClasses = "w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 shadow-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-400";
+    
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-8">
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-700 to-indigo-800 px-8 py-10 text-white text-center">
-                    <h2 className="text-3xl font-extrabold mb-3">Employment Onboarding Form</h2>
-                    <p className="text-blue-100 max-w-3xl mx-auto text-sm leading-relaxed">
-                        Fill all the Details Carefully. These details are required to start Employment with the Company and will be used for background verification. We will call/mail the references for verification.
-                    </p>
-                    <p className="text-yellow-300 mt-2 text-xs font-semibold tracking-wide">
-                        Cross Check every detail. Document must be uploaded in a single file (PDF/Image, Max 10MB).
+        <div className="min-h-screen bg-[#F5F5F7] py-12 px-4 font-sans selection:bg-black selection:text-white">
+            <div className="max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-3">Employment Onboarding</h1>
+                    <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
+                        Please provide accurate information for your employment profile and background verification. Ensure all uploaded documents are clear and valid.
                     </p>
                 </div>
 
-                {/* Stepper */}
-                <div className="bg-gray-50 border-b px-8 py-5">
-                    <div className="flex items-center justify-between max-w-3xl mx-auto">
-                        {steps.map((step, idx) => (
-                            <div key={step.id} className="flex flex-col items-center relative z-10 w-1/4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors duration-300 ${
-                                    currentStep > step.id ? "bg-green-500 border-green-500 text-white" : 
-                                    currentStep === step.id ? "bg-blue-600 border-blue-600 text-white shadow-lg" : 
-                                    "bg-white border-gray-300 text-gray-400"
-                                }`}>
-                                    {currentStep > step.id ? <CheckCircle2 size={20} /> : step.id}
-                                </div>
-                                <span className={`text-xs mt-2 font-medium ${currentStep >= step.id ? "text-gray-900" : "text-gray-400"}`}>
-                                    {step.name}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-8">
+                {/* Form Container */}
+                <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
                     
-                    {/* STEP 1: PERSONAL DETAILS */}
-                    {currentStep === 1 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Basic & Personal Details</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate Email ID *</label><input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate First Name *</label><input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate Last Name *</label><input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate Mobile Number *</label><input required type="text" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Alternate Mobile Number</label>
-                                    <p className="text-[10px] text-gray-400 mb-1">If not available then input any family member number</p>
-                                    <input type="text" name="alternateMobile" value={formData.alternateMobile} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" />
-                                </div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate Date Of Birth *</label><input required type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Candidate Gender *</label>
-                                    <select required name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 bg-white">
-                                        <option value="">Select Gender</option><option value="male">Male</option><option value="female">Female</option>
-                                    </select>
-                                </div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1">Candidate LinkedIn Profile Link</label><input type="url" name="linkedInProfile" value={formData.linkedInProfile} onChange={handleChange} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Permanent Full Address *</label>
-                                    <p className="text-[10px] text-gray-400 mb-1">Street Address, City, District, State, Pincode</p>
-                                    <textarea required name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} rows="2" className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500"></textarea>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Current Full Address *</label>
-                                    <p className="text-[10px] text-gray-400 mb-1">Street Address, City, District, State, Pincode</p>
-                                    <textarea required name="currentAddress" value={formData.currentAddress} onChange={handleChange} rows="2" className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500"></textarea>
-                                </div>
+                    {/* Progress Bar */}
+                    <div className="px-8 pt-8 pb-4 border-b border-gray-100 bg-white/50 backdrop-blur-xl sticky top-0 z-20">
+                        <div className="flex justify-between items-center relative">
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full overflow-hidden -z-10">
+                                <div className="h-full bg-blue-600 transition-all duration-500 ease-out" style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }} />
                             </div>
-                        </div>
-                    )}
-
-                    {/* STEP 2: DOCUMENTS */}
-                    {currentStep === 2 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <h3 className="text-xl font-bold text-gray-800 mb-2 border-b pb-2">Document Uploads</h3>
-                            <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100 mb-6">
-                                Upload 1 supported file: PDF, document, or image. Max 10 MB. For multiple pages, create a single PDF file first.
-                            </p>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {[
-                                    { name: "cvFile", label: "Upload Latest CV", req: true },
-                                    { name: "highSchoolCertificate", label: "Upload High School Marksheet & Certificate", req: true },
-                                    { name: "intermediateCertificate", label: "Upload Intermediate Marksheet & Certificate", req: false },
-                                    { name: "diplomaCertificate", label: "Upload Diploma Certificate & Marksheet", desc: "If completed, upload all in 1 PDF", req: false },
-                                    { name: "graduationCertificate", label: "Upload Graduation Certificate & Marksheet", desc: "B.Tech, BCA, upload all in 1 PDF", req: false },
-                                    { name: "aadharFront", label: "Upload Adhar Card (Front side)", req: true },
-                                    { name: "aadharBack", label: "Upload Adhar Card (Back side)", req: false },
-                                    { name: "panCard", label: "Upload PAN Card", req: true },
-                                    { name: "bankPassbook", label: "Upload Bank Account (Passbook)", req: true },
-                                    { name: "passportPhoto", label: "Upload Passport Size Photo", req: true, imgOnly: true },
-                                    { name: "fullSizePhoto", label: "Upload Full Size Photo", req: true, imgOnly: true }
-                                ].map((f) => (
-                                    <div key={f.name} className="border border-gray-300 rounded-xl p-4 bg-gray-50 flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition">
-                                        <div>
-                                            <label className="text-sm font-bold text-gray-800 mb-1 flex items-start gap-1">
-                                                <Upload size={14} className="mt-0.5 text-blue-600 shrink-0"/> 
-                                                <span>{f.label} {f.req && <span className="text-red-500">*</span>}</span>
-                                            </label>
-                                            {f.desc && <p className="text-[10px] text-gray-500 mb-2">{f.desc}</p>}
+                            {steps.map((step) => {
+                                const Icon = step.icon;
+                                const isActive = currentStep === step.id;
+                                const isCompleted = currentStep > step.id;
+                                return (
+                                    <div key={step.id} className="flex flex-col items-center gap-2 relative">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border-[2px] z-10 ${
+                                            isCompleted ? "bg-blue-600 border-blue-600 text-white" :
+                                            isActive ? "bg-white border-blue-600 text-blue-600 shadow-md scale-110" :
+                                            "bg-white border-gray-300 text-gray-400"
+                                        }`}>
+                                            {isCompleted ? <CheckCircle2 size={20} strokeWidth={3} /> : <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />}
                                         </div>
-                                        <input type="file" name={f.name} onChange={handleFileChange} required={f.req} accept={f.imgOnly ? "image/*" : ".pdf,.jpg,.jpeg,.png,.doc,.docx"} className="text-xs w-full text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 mt-3 cursor-pointer" />
+                                        <span className={`text-[11px] font-semibold tracking-wide uppercase transition-colors bg-white px-1 z-10 ${
+                                            isActive ? "text-blue-600" : isCompleted ? "text-gray-800" : "text-gray-500"
+                                        }`}>
+                                            {step.name}
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
+                                )
+                            })}
                         </div>
-                    )}
+                    </div>
 
-                    {/* STEP 3: REFERENCES */}
-                    {currentStep === 3 && (
-                        <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                            
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2 border-b pb-2">Personal References</h3>
-                                <p className="text-sm text-gray-500 mb-4">Provide 2 Personal References for Background Verification.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {[0, 1].map((idx) => (
-                                        <div key={idx} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-                                            <h4 className="font-bold text-blue-700">{idx === 0 ? "First" : "Second"} Person</h4>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Name *</label><input required type="text" value={formData.personalReferences[idx].name} onChange={(e) => handleNestedChange("personalReferences", idx, "name", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Mobile *</label><input required type="text" value={formData.personalReferences[idx].mobile} onChange={(e) => handleNestedChange("personalReferences", idx, "mobile", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Relation *</label><input required type="text" value={formData.personalReferences[idx].relation} onChange={(e) => handleNestedChange("personalReferences", idx, "relation", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2 border-b pb-2">Professional References</h3>
-                                <p className="text-sm text-gray-500 mb-4">Give 2 Professional References for Background Verification.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {[0, 1].map((idx) => (
-                                        <div key={idx} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-                                            <h4 className="font-bold text-indigo-700">{idx === 0 ? "First" : "Second"} Person</h4>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Name *</label><input required type="text" value={formData.professionalReferences[idx].name} onChange={(e) => handleNestedChange("professionalReferences", idx, "name", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500" /></div>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Mobile *</label><input required type="text" value={formData.professionalReferences[idx].mobile} onChange={(e) => handleNestedChange("professionalReferences", idx, "mobile", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500" /></div>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Designation *</label><input required type="text" value={formData.professionalReferences[idx].designation} onChange={(e) => handleNestedChange("professionalReferences", idx, "designation", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500" /></div>
-                                            <div><label className="block text-xs font-semibold text-gray-700 mb-1">Working Company Name *</label><input required type="text" value={formData.professionalReferences[idx].company} onChange={(e) => handleNestedChange("professionalReferences", idx, "company", e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500" /></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                        </div>
-                    )}
-
-                    {/* STEP 4: EXPERIENCE */}
-                    {currentStep === 4 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Experience & Previous Company</h3>
-                            
-                            <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6">
-                                <label className="block text-sm font-bold text-blue-900 mb-2">Year Of Experience *</label>
-                                <input required type="number" min="0" step="0.1" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className="w-full md:w-1/3 px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-600 bg-white shadow-sm font-semibold" placeholder="e.g. 2.5 (Enter 0 if Fresher)" />
-                            </div>
-
-                            {Number(formData.yearsOfExperience) > 0 && (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                        <div className="lg:col-span-3"><h4 className="font-bold text-gray-800 text-lg border-b pb-2">Previous/Current Company Details</h4></div>
+                    <form onSubmit={handleSubmit} className="p-8 sm:p-12">
+                        <div className="min-h-[400px]">
+                            {/* STEP 1: PERSONAL DETAILS */}
+                            {currentStep === 1 && (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InputField label="Email ID" required><input required type="email" name="email" value={formData.email} onChange={handleChange} className={inputClasses} placeholder="john.doe@example.com"/></InputField>
+                                        <InputField label="First Name" required><input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className={inputClasses} placeholder="John"/></InputField>
+                                        <InputField label="Last Name" required><input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className={inputClasses} placeholder="Doe"/></InputField>
+                                        <InputField label="Mobile Number" required><input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className={inputClasses} placeholder="+91 9876543210"/></InputField>
+                                        <InputField label="Alternate Mobile"><input type="tel" name="alternateMobile" value={formData.alternateMobile} onChange={handleChange} className={inputClasses} placeholder="Optional"/></InputField>
+                                        <InputField label="Date Of Birth" required><input required type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className={inputClasses} /></InputField>
+                                        <InputField label="Gender" required>
+                                            <select required name="gender" value={formData.gender} onChange={handleChange} className={`${inputClasses} appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6%209L12%2015L18%209%22%20stroke%3D%22%23000000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-12px)_center] bg-[size:16px]`}>
+                                                <option value="" disabled>Select Gender</option><option value="male">Male</option><option value="female">Female</option>
+                                            </select>
+                                        </InputField>
+                                        <InputField label="LinkedIn Profile"><input type="url" name="linkedInProfile" value={formData.linkedInProfile} onChange={handleChange} className={inputClasses} placeholder="https://linkedin.com/in/johndoe"/></InputField>
                                         
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Full Name of Company</label><input type="text" value={formData.previousCompany.name} onChange={(e) => handleNestedChange("previousCompany", null, "name", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Current/Last Designation</label><input type="text" value={formData.previousCompany.designation} onChange={(e) => handleNestedChange("previousCompany", null, "designation", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Company Website *</label><input required type="url" value={formData.previousCompany.website} onChange={(e) => handleNestedChange("previousCompany", null, "website", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Date of Joining</label><input type="date" value={formData.previousCompany.dateOfJoining} onChange={(e) => handleNestedChange("previousCompany", null, "dateOfJoining", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Date Of Last working day</label><input type="date" value={formData.previousCompany.dateOfLastWorkingDay} onChange={(e) => handleNestedChange("previousCompany", null, "dateOfLastWorkingDay", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Employee ID</label><input type="text" value={formData.previousCompany.employeeId} onChange={(e) => handleNestedChange("previousCompany", null, "employeeId", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">HR/Manager Name</label><input type="text" value={formData.previousCompany.hrName} onChange={(e) => handleNestedChange("previousCompany", null, "hrName", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">HR/Manager Contact Number</label><input type="text" value={formData.previousCompany.hrContact} onChange={(e) => handleNestedChange("previousCompany", null, "hrContact", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">HR/Manager Email ID</label><input type="email" value={formData.previousCompany.hrEmail} onChange={(e) => handleNestedChange("previousCompany", null, "hrEmail", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Company Official Mail ID</label><input type="email" value={formData.previousCompany.officialEmail} onChange={(e) => handleNestedChange("previousCompany", null, "officialEmail", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Company Phone Number</label><input type="text" value={formData.previousCompany.phone} onChange={(e) => handleNestedChange("previousCompany", null, "phone", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div><label className="block text-xs font-bold text-gray-700 mb-1">Last/Current In Hand Salary (Monthly) *</label><input required type="number" value={formData.previousCompany.lastSalary} onChange={(e) => handleNestedChange("previousCompany", null, "lastSalary", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                        <div className="lg:col-span-3"><label className="block text-xs font-bold text-gray-700 mb-1">Company Address</label><textarea value={formData.previousCompany.address} onChange={(e) => handleNestedChange("previousCompany", null, "address", e.target.value)} rows="2" className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" placeholder="Street Address, City, District, State, Pincode"></textarea></div>
-                                        <div className="lg:col-span-3"><label className="block text-xs font-bold text-gray-700 mb-1">Describe Reason behind Leaving Current/Last Job</label><textarea value={formData.previousCompany.reasonForLeaving} onChange={(e) => handleNestedChange("previousCompany", null, "reasonForLeaving", e.target.value)} rows="2" className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"></textarea></div>
-                                        <div className="lg:col-span-3"><label className="block text-xs font-bold text-gray-700 mb-1">Company LinkedIn Profile Link</label><input type="url" value={formData.previousCompany.linkedInProfile} onChange={(e) => handleNestedChange("previousCompany", null, "linkedInProfile", e.target.value)} className="w-full border rounded-lg p-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" /></div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                        <div className="md:col-span-2"><h4 className="font-bold text-gray-800 text-lg border-b pb-2">Experience Documents</h4></div>
-                                        
-                                        <div className="border rounded-xl p-4 bg-gray-50">
-                                            <label className="block text-sm font-bold text-gray-800 mb-1">Upload Last Job Offer Letter</label>
-                                            <p className="text-[10px] text-gray-500 mb-2">Max 10 MB (PDF/Image)</p>
-                                            <input type="file" name="offerLetterFile" onChange={handleFileChange} className="text-xs file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 w-full cursor-pointer hover:file:bg-blue-700" />
-                                        </div>
-                                        <div className="border rounded-xl p-4 bg-gray-50">
-                                            <label className="block text-sm font-bold text-gray-800 mb-1">Upload Experience Letter</label>
-                                            <p className="text-[10px] text-gray-500 mb-2">Max 10 MB (PDF/Image)</p>
-                                            <input type="file" name="experienceLetterFile" onChange={handleFileChange} className="text-xs file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 w-full cursor-pointer hover:file:bg-blue-700" />
-                                        </div>
-                                        <div className="border rounded-xl p-4 bg-gray-50">
-                                            <label className="block text-sm font-bold text-gray-800 mb-1">Upload Relieving Letter</label>
-                                            <p className="text-[10px] text-gray-500 mb-2">Max 10 MB (PDF/Image)</p>
-                                            <input type="file" name="relievingLetterFile" onChange={handleFileChange} className="text-xs file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 w-full cursor-pointer hover:file:bg-blue-700" />
-                                        </div>
-                                        <div className="border rounded-xl p-4 bg-gray-50">
-                                            <label className="block text-sm font-bold text-gray-800 mb-1">Upload Salary Slips (Last 3 Months)</label>
-                                            <p className="text-[10px] text-red-500 font-semibold mb-2">Create a single PDF file for all 3 salary slips</p>
-                                            <input type="file" name="salarySlipsFile" onChange={handleFileChange} className="text-xs file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 w-full cursor-pointer hover:file:bg-blue-700" />
+                                        <div className="md:col-span-2 space-y-6 mt-4 pt-6 border-t border-gray-100">
+                                            <InputField label="Permanent Address" required desc="Street Address, City, District, State, Pincode">
+                                                <textarea required name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} rows="2" className={`${inputClasses} resize-none`} placeholder="Enter full permanent address..."></textarea>
+                                            </InputField>
+                                            <InputField label="Current Address" required desc="Street Address, City, District, State, Pincode">
+                                                <textarea required name="currentAddress" value={formData.currentAddress} onChange={handleChange} rows="2" className={`${inputClasses} resize-none`} placeholder="Enter full current address..."></textarea>
+                                            </InputField>
                                         </div>
                                     </div>
                                 </div>
                             )}
+
+                            {/* STEP 2: DOCUMENTS */}
+                            {currentStep === 2 && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 mb-8">
+                                        <p className="text-sm text-gray-600 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                            Upload 1 supported file (PDF/Image) per field. Max 10 MB. Merge multiple pages into a single PDF.
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {[
+                                            { name: "cvFile", label: "Latest Resume / CV", req: true },
+                                            { name: "aadharFront", label: "Aadhar Card (Front)", req: true },
+                                            { name: "aadharBack", label: "Aadhar Card (Back)", req: false },
+                                            { name: "panCard", label: "PAN Card", req: true },
+                                            { name: "bankPassbook", label: "Bank Account Passbook/Cheque", req: true },
+                                            { name: "highSchoolCertificate", label: "High School (10th) Marksheet", req: true },
+                                            { name: "intermediateCertificate", label: "Intermediate (12th) Marksheet", req: false },
+                                            { name: "diplomaCertificate", label: "Diploma Certificate (If any)", req: false },
+                                            { name: "graduationCertificate", label: "Graduation Certificate", req: false },
+                                            { name: "passportPhoto", label: "Passport Size Photo", req: true, imgOnly: true },
+                                            { name: "fullSizePhoto", label: "Full Size Photo", req: true, imgOnly: true }
+                                        ].map((f) => (
+                                            <div key={f.name} className="group relative border border-gray-200 rounded-2xl p-4 transition-all hover:border-black hover:shadow-sm bg-white">
+                                                <div className="flex flex-col h-full justify-between">
+                                                    <div>
+                                                        <label className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                                            {f.label} {f.req && <span className="text-red-500">*</span>}
+                                                        </label>
+                                                        {f.desc && <p className="text-xs text-gray-500 mt-1">{f.desc}</p>}
+                                                    </div>
+                                                    <div className="mt-4 relative">
+                                                        <input type="file" name={f.name} onChange={handleFileChange} required={f.req} accept={f.imgOnly ? "image/*" : ".pdf,.jpg,.jpeg,.png"} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="Choose file" />
+                                                        <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border border-dashed border-gray-300 rounded-xl group-hover:bg-gray-100 transition-colors">
+                                                            <Upload size={16} className="text-gray-400 group-hover:text-black transition-colors" />
+                                                            <span className="text-xs font-medium text-gray-500 truncate group-hover:text-black">
+                                                                {files[f.name] ? files[f.name].name : "Click to browse or drag file"}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: REFERENCES */}
+                            {currentStep === 3 && (
+                                <div className="space-y-12 animate-in fade-in slide-in-from-right-8 duration-500">
+                                    
+                                    <div className="space-y-6">
+                                        <div className="border-b border-gray-100 pb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">Personal References</h3>
+                                            <p className="text-sm text-gray-500">Two personal contacts for background verification.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {[0, 1].map((idx) => (
+                                                <div key={`personal-${idx}`} className="space-y-5 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                                    <h4 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Reference {idx + 1}</h4>
+                                                    <InputField label="Name" required><input required type="text" value={formData.personalReferences[idx].name} onChange={(e) => handleNestedChange("personalReferences", idx, "name", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Mobile" required><input required type="tel" value={formData.personalReferences[idx].mobile} onChange={(e) => handleNestedChange("personalReferences", idx, "mobile", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Relation" required><input required type="text" value={formData.personalReferences[idx].relation} onChange={(e) => handleNestedChange("personalReferences", idx, "relation", e.target.value)} className={inputClasses} /></InputField>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="border-b border-gray-100 pb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">Professional References</h3>
+                                            <p className="text-sm text-gray-500">Two professional contacts (ex-managers, colleagues).</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {[0, 1].map((idx) => (
+                                                <div key={`prof-${idx}`} className="space-y-5 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                                    <h4 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Reference {idx + 1}</h4>
+                                                    <InputField label="Name" required><input required type="text" value={formData.professionalReferences[idx].name} onChange={(e) => handleNestedChange("professionalReferences", idx, "name", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Mobile" required><input required type="tel" value={formData.professionalReferences[idx].mobile} onChange={(e) => handleNestedChange("professionalReferences", idx, "mobile", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Designation" required><input required type="text" value={formData.professionalReferences[idx].designation} onChange={(e) => handleNestedChange("professionalReferences", idx, "designation", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Company Name" required><input required type="text" value={formData.professionalReferences[idx].company} onChange={(e) => handleNestedChange("professionalReferences", idx, "company", e.target.value)} className={inputClasses} /></InputField>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
+
+                            {/* STEP 4: EXPERIENCE */}
+                            {currentStep === 4 && (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 relative overflow-hidden">
+                                        <InputField label="Total Years Of Experience" required>
+                                            <input required type="number" min="0" step="0.1" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className={inputClasses + " md:w-1/2 font-medium text-lg"} placeholder="e.g. 2.5 (Enter 0 if Fresher)" />
+                                        </InputField>
+                                    </div>
+
+                                    {Number(formData.yearsOfExperience) > 0 && (
+                                        <div className="space-y-10 mt-10">
+                                            <div className="space-y-6">
+                                                <h4 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">Previous Company Details</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    <InputField label="Company Name"><input type="text" value={formData.previousCompany.name} onChange={(e) => handleNestedChange("previousCompany", null, "name", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Designation"><input type="text" value={formData.previousCompany.designation} onChange={(e) => handleNestedChange("previousCompany", null, "designation", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Website" required><input required type="url" value={formData.previousCompany.website} onChange={(e) => handleNestedChange("previousCompany", null, "website", e.target.value)} className={inputClasses} placeholder="https://..."/></InputField>
+                                                    <InputField label="Date of Joining"><input type="date" value={formData.previousCompany.dateOfJoining} onChange={(e) => handleNestedChange("previousCompany", null, "dateOfJoining", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Last Working Day"><input type="date" value={formData.previousCompany.dateOfLastWorkingDay} onChange={(e) => handleNestedChange("previousCompany", null, "dateOfLastWorkingDay", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Employee ID"><input type="text" value={formData.previousCompany.employeeId} onChange={(e) => handleNestedChange("previousCompany", null, "employeeId", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="HR/Manager Name"><input type="text" value={formData.previousCompany.hrName} onChange={(e) => handleNestedChange("previousCompany", null, "hrName", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="HR/Manager Contact"><input type="text" value={formData.previousCompany.hrContact} onChange={(e) => handleNestedChange("previousCompany", null, "hrContact", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="HR/Manager Email"><input type="email" value={formData.previousCompany.hrEmail} onChange={(e) => handleNestedChange("previousCompany", null, "hrEmail", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Company Official Email"><input type="email" value={formData.previousCompany.officialEmail} onChange={(e) => handleNestedChange("previousCompany", null, "officialEmail", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Company Phone"><input type="text" value={formData.previousCompany.phone} onChange={(e) => handleNestedChange("previousCompany", null, "phone", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Last In-Hand Salary" required desc="Monthly salary"><input required type="number" value={formData.previousCompany.lastSalary} onChange={(e) => handleNestedChange("previousCompany", null, "lastSalary", e.target.value)} className={inputClasses} /></InputField>
+                                                    <div className="lg:col-span-3">
+                                                        <InputField label="Company Address">
+                                                            <textarea value={formData.previousCompany.address} onChange={(e) => handleNestedChange("previousCompany", null, "address", e.target.value)} rows="2" className={`${inputClasses} resize-none`}></textarea>
+                                                        </InputField>
+                                                    </div>
+                                                    <div className="lg:col-span-3">
+                                                        <InputField label="Reason for Leaving">
+                                                            <textarea value={formData.previousCompany.reasonForLeaving} onChange={(e) => handleNestedChange("previousCompany", null, "reasonForLeaving", e.target.value)} rows="2" className={`${inputClasses} resize-none`}></textarea>
+                                                        </InputField>
+                                                    </div>
+                                                    <div className="lg:col-span-3">
+                                                        <InputField label="Company LinkedIn"><input type="url" value={formData.previousCompany.linkedInProfile} onChange={(e) => handleNestedChange("previousCompany", null, "linkedInProfile", e.target.value)} className={inputClasses} /></InputField>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-6 pt-6 border-t border-gray-100">
+                                                <h4 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">Experience Documents</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {[
+                                                        { name: "offerLetterFile", label: "Last Job Offer Letter" },
+                                                        { name: "experienceLetterFile", label: "Experience Letter" },
+                                                        { name: "relievingLetterFile", label: "Relieving Letter" },
+                                                        { name: "salarySlipsFile", label: "Salary Slips (Last 3 Months)", desc: "Create a single PDF" }
+                                                    ].map(f => (
+                                                        <div key={f.name} className="group relative border border-gray-200 rounded-2xl p-4 transition-all hover:border-black hover:shadow-sm bg-white">
+                                                            <div className="flex flex-col h-full justify-between">
+                                                                <div>
+                                                                    <label className="text-sm font-semibold text-gray-900">{f.label}</label>
+                                                                    {f.desc && <p className="text-[10px] text-gray-500 mt-1">{f.desc}</p>}
+                                                                </div>
+                                                                <div className="mt-4 relative">
+                                                                    <input type="file" name={f.name} onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="Choose file" />
+                                                                    <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border border-dashed border-gray-300 rounded-xl group-hover:bg-gray-100 transition-colors">
+                                                                        <Upload size={16} className="text-gray-400 group-hover:text-black transition-colors" />
+                                                                        <span className="text-xs font-medium text-gray-500 truncate group-hover:text-black">
+                                                                            {files[f.name] ? files[f.name].name : "Browse file"}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    )}
 
-                    {/* Navigation Buttons */}
-                    <div className="mt-10 pt-6 border-t flex items-center justify-between">
-                        <button type="button" onClick={prevStep} disabled={currentStep === 1} className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>
-                            <ChevronLeft size={20} /> Back
-                        </button>
+                        {/* Navigation Buttons */}
+                        <div className="mt-12 pt-6 border-t border-gray-100 flex items-center justify-between">
+                            <button type="button" onClick={prevStep} disabled={currentStep === 1} className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>
+                                <ChevronLeft size={18} /> Back
+                            </button>
 
-                        <button type="submit" disabled={loading} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-8 text-lg rounded-full shadow-lg transform hover:-translate-y-0.5 transition-all">
-                            {loading ? "Processing..." : currentStep === 4 ? "Final Submit Application" : "Save & Continue"}
-                            {currentStep !== 4 && <ChevronRight size={20} />}
-                        </button>
-                    </div>
-
-                </form>
+                            <button type="submit" disabled={loading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-full shadow-md transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:hover:translate-y-0">
+                                {loading ? "Processing..." : currentStep === 4 ? "Submit Application" : "Save & Continue"}
+                                {currentStep !== 4 && <ChevronRight size={18} />}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div className="text-center mt-8 text-sm text-gray-400 font-medium pb-12">
+                    Secured via 256-bit encryption. Your data is safe.
+                </div>
             </div>
         </div>
     );

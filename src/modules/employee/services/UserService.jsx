@@ -21,6 +21,11 @@ export const toggleUserStatus = async (id) => {
     return res.data;
 };
 
+export const deleteUser = async (id) => {
+    const res = await api.delete(ENDPOINTS.USER.DELETE_USER(id));
+    return res.data;
+};
+
 export const fetchProfile = async () => {
     const res = await api.get(ENDPOINTS.AUTH.PROFILE);
     return res.data;

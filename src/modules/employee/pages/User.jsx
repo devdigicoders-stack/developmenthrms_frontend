@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import EmployeeDrawer from "../components/EmployeeDrawer"
-import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff } from "lucide-react";
-import { fetchUsers, createUser, updateUser, toggleUserStatus } from "../services/UserService";
+import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2 } from "lucide-react";
+import { fetchUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "../services/UserService";
 import { fetchRoles, getAllRolesForAdmin, getRolesByCompany } from "../../roles/service/RoleService";
 import { useStore } from "../../../context/StoreContext";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
@@ -10,6 +10,7 @@ import { getStatusesByCompany, getCompanyEmploymentStatuses } from "../../employ
 import { getDepartmentsByCompany } from "../../department/services/departmentService";
 import { adminChangePassword } from "../../auth/services/authService";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 const StatCard = ({ icon, label, value, iconBg, iconColor }) => (
     <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
@@ -61,6 +62,9 @@ const User = () => {
     const [search, setSearch] = useState("");
     const [filterCompany, setFilterCompany] = useState("");
     const [filterRole, setFilterRole] = useState("");
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     const loadUsers = async () => {
         try {
@@ -115,6 +119,14 @@ const User = () => {
         const matchRole = !filterRole || u.role?._id === filterRole;
         return matchSearch && matchCompany && matchRole;
     });
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, filterCompany, filterRole]);
+
+    const totalPages = Math.ceil(filteredUsers.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
 
     const clearFilters = () => {
         setSearch("");
@@ -197,6 +209,29 @@ const User = () => {
             loadUsers();
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleDeleteUser = async (id) => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "You want to delete this user? This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+        
+        if (!result.isConfirmed) return;
+
+        try {
+            await deleteUser(id);
+            toast.success("User deleted successfully");
+            loadUsers();
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Error deleting user");
         }
     };
 
@@ -289,15 +324,15 @@ const User = () => {
                             <th className="px-4 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredUsers.length === 0 ? (
+                    <tbody className="divide-y divide-gray-100 text-sm">
+                        {paginatedUsers.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
-                                    No employees found.
+                                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
+                                    No employees found matching the filters.
                                 </td>
                             </tr>
                         ) : (
-                            filteredUsers.map((u) => (
+                            paginatedUsers.map((u) => (
                                 <tr key={u._id} className="hover:bg-gray-50 transition">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
@@ -360,14 +395,25 @@ const User = () => {
                                     <td className="px-4 py-3 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             {hasPermission("UPDATE_USER") && u.role?.name !== "super_admin" && (
+                                                <button
+                                                    onClick={() => handleToggleStatus(u._id)}
+                                                    title={u.isActive ? "Disable user" : "Enable user"}
+                                                    className={`p-2 rounded-lg transition ${u.isActive ? "bg-red-50 hover:bg-red-100 text-red-500" : "bg-green-50 hover:bg-green-100 text-green-600"}`}
+                                                >
+                                                    {u.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                                </button>
+                                            )}
+                                            {hasPermission("DELETE_USER") && u.role?.name !== "super_admin" && (
+                                                <button
+                                                    onClick={() => handleDeleteUser(u._id)}
+                                                    title="Delete user"
+                                                    className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            )}
+                                            {hasPermission("UPDATE_USER") && u.role?.name !== "super_admin" && (
                                                 <>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(u._id)}
-                                                        title={u.isActive ? "Disable user" : "Enable user"}
-                                                        className={`p-2 rounded-lg transition ${u.isActive ? "bg-red-50 hover:bg-red-100 text-red-500" : "bg-green-50 hover:bg-green-100 text-green-600"}`}
-                                                    >
-                                                        {u.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                                                    </button>
                                                     <button
                                                         onClick={() => {
                                                             setSelected({ ...u, companyId: u.companyId?._id || "", role: u.role?._id || "", workShift: u.workShift?._id || u.workShift || "", reportingTo: u.reportingTo?._id || u.reportingTo || "", employmentStatus: u.employmentStatus?._id || u.employmentStatus || "", department: u.department?._id || u.department || "" });
@@ -408,6 +454,34 @@ const User = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-3 bg-white p-4 border border-gray-200 rounded-xl">
+                    <span className="text-sm text-gray-500">
+                        Showing <span className="font-medium text-gray-900">{startIndex + 1}</span> to <span className="font-medium text-gray-900">{Math.min(startIndex + pageSize, filteredUsers.length)}</span> of <span className="font-medium text-gray-900">{filteredUsers.length}</span> entries
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                            Previous
+                        </button>
+                        <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium border border-blue-100">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <EmployeeDrawer
                 isOpen={open}

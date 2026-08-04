@@ -551,8 +551,9 @@ const Leads = () => {
     const { user } = useStore();
     const isSuperAdmin = user?.role?.name === "super_admin";
     const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
+    const canCreate = isAdmin || user?.role?.permissions?.includes("CREATE_LEAD");
     const canWrite = isAdmin || user?.role?.permissions?.some(p => ["CREATE_LEAD", "UPDATE_LEAD"].includes(p));
-    const canDelete = isAdmin || user?.role?.permissions?.some(p => p === "DELETE_LEAD");
+    const canDelete = isAdmin || user?.role?.permissions?.includes("DELETE_LEAD");
 
     const [leads, setLeads]       = useState([]);
     const [total, setTotal]       = useState(0);
@@ -681,13 +682,13 @@ const Leads = () => {
                                 <Settings size={15} /> Manage Fields
                             </button>
                         )}
-                        {canWrite && (
+                        {canCreate && (
                             <button onClick={() => setImportOpen(true)}
                                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">
                                 <Upload size={15} /> Import CSV
                             </button>
                         )}
-                        {canWrite && (
+                        {canCreate && (
                             <button onClick={openNew}
                                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
                                 <Plus size={15} /> New Lead
@@ -707,14 +708,16 @@ const Leads = () => {
                         <option value="">All Statuses</option>
                         {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <select
-                        value={filterAssignedTo}
-                        onChange={e => handleFilterChange(filterStatus, e.target.value)}
-                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    >
-                        <option value="">All Assigned To</option>
-                        {users.map(u => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
-                    </select>
+                    {isAdmin && (
+                        <select
+                            value={filterAssignedTo}
+                            onChange={e => handleFilterChange(filterStatus, e.target.value)}
+                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                            <option value="">All Assigned To</option>
+                            {users.map(u => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
+                        </select>
+                    )}
                     {(filterStatus || filterAssignedTo) && (
                         <button
                             onClick={() => handleFilterChange("", "")}

@@ -360,7 +360,7 @@ const ManageNda = () => {
                         <div className="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center p-4">
                             {selectedSignatureDoc.signedDocumentUrl ? (
                                 <iframe 
-                                    src={selectedSignatureDoc.signedDocumentUrl} 
+                                    src={`${selectedSignatureDoc.signedDocumentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
                                     title="Signed NDA Document" 
                                     className="w-full h-full border-0 rounded-lg shadow-sm bg-white"
                                 />

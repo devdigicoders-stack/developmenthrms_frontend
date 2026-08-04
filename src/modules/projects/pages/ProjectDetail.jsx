@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Paperclip, MessageSquare, Trash2, X, Upload, Link2, Fo
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import { useNotifications } from "../../../context/NotificationContext";
+import Swal from "sweetalert2";
 import { getProjectById, getTasksByProject, createTask, updateTask, deleteTask, getFileBundles } from "../services/projectService";
 import { markProjectNotificationsRead } from "../../notifications/services/notificationService";
 import api from "../../../services/axios";
@@ -195,11 +196,14 @@ const TaskCard = ({ task, onClick, onDelete, canDelete, hasUnread }) => (
                     <span className="flex items-center gap-0.5 text-[10px]"><MessageSquare size={10} />{task.comments.length}</span>
                 )}
                 {task.assignedTo?.length > 0 && (
-                    <div className="flex -space-x-1">
+                    <div className="flex flex-wrap gap-1 mt-1">
                         {task.assignedTo.slice(0, 3).map(u => (
                             <div key={u._id} title={`${u.firstName} ${u.lastName}`}
-                                className="w-5 h-5 rounded-full bg-blue-600 text-white text-[8px] font-bold flex items-center justify-center border border-white">
-                                {u.firstName?.[0]}{u.lastName?.[0]}
+                                className="flex items-center gap-1 bg-blue-50 rounded-full pr-1.5 border border-blue-100">
+                                <div className="w-4 h-4 rounded-full bg-blue-600 text-white text-[7px] font-bold flex items-center justify-center">
+                                    {u.firstName?.[0]}{u.lastName?.[0]}
+                                </div>
+                                <span className="text-[9px] font-semibold text-blue-700 truncate max-w-[60px]">{u.firstName}</span>
                             </div>
                         ))}
                     </div>
@@ -299,7 +303,17 @@ const ProjectDetail = () => {
     };
 
     const handleDelete = async (taskId) => {
-        if (!window.confirm("Delete this task?")) return;
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you want to delete this task?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+
+        if (!result.isConfirmed) return;
         try {
             await deleteTask(taskId);
             toast.success("Task deleted");

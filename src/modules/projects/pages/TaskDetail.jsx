@@ -69,7 +69,7 @@ const AttachmentItem = ({ att, onDelete, canDelete }) => (
 
 const TaskDetail = ({ taskId, onClose, onUpdate, isAdmin, currentUserId, projectMembers = [], projectBundles = [], isClientView = false }) => {
     const [task, setTask] = useState(null);
-    const [activeView, setActiveView] = useState("chat"); // "chat" or "details"
+    const [activeView, setActiveView] = useState("details"); // "chat" or "details"
     const [commentText, setCommentText] = useState("");
     const [commentFiles, setCommentFiles] = useState([]);
     const [submitting, setSubmitting] = useState(false);
@@ -552,6 +552,16 @@ const TaskDetail = ({ taskId, onClose, onUpdate, isAdmin, currentUserId, project
                         <div className="px-6 py-4 border-b">
                             <p className="text-xs font-medium text-gray-500 mb-1">Description</p>
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
+                        </div>
+                    )}
+
+                    {/* Links */}
+                    {task.links && (
+                        <div className="px-6 py-4 border-b">
+                            <p className="text-xs font-medium text-gray-500 mb-1">Links</p>
+                            <a href={task.links.startsWith("http") ? task.links : `https://${task.links}`} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline break-all flex items-center gap-1.5">
+                                <Link2 size={14} /> {task.links}
+                            </a>
                         </div>
                     )}
 

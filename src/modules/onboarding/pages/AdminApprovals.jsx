@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getOnboardingRequests, approveOnboarding, rejectOnboarding } from "../../../services/onboardingService";
 import { toast } from "react-toastify";
-import { CheckCircle, XCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link } from "lucide-react";
+import { CheckCircle, XCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link, Loader2 } from "lucide-react";
 import { FaReact } from "react-icons/fa";
 import { useStore } from "../../../context/StoreContext";
 import Swal from "sweetalert2";
@@ -13,6 +13,7 @@ export default function AdminApprovals() {
     const [activeTab, setActiveTab] = useState("pending");
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [basicSalary, setBasicSalary] = useState("");
+    const [isApproving, setIsApproving] = useState(false);
 
     const fetchRequests = async () => {
         try {
@@ -33,6 +34,7 @@ export default function AdminApprovals() {
         if (!basicSalary || basicSalary <= 0) {
             return toast.error("Please enter a valid CTC / Basic Salary");
         }
+        setIsApproving(true);
         try {
             await approveOnboarding(selectedRequest._id, Number(basicSalary));
             toast.success("Employee Approved & Offer Letter Sent!");
@@ -40,6 +42,8 @@ export default function AdminApprovals() {
             fetchRequests();
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to approve");
+        } finally {
+            setIsApproving(false);
         }
     };
 
@@ -384,9 +388,14 @@ export default function AdminApprovals() {
                                         </button>
                                         <button 
                                             onClick={handleApprove}
-                                            className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 md:py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center transform hover:-translate-y-0.5"
+                                            disabled={isApproving}
+                                            className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white font-bold py-2.5 md:py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center transform hover:-translate-y-0.5 disabled:transform-none"
                                         >
-                                            <CheckCircle size={20} className="mr-2" /> Approve
+                                            {isApproving ? (
+                                                <><Loader2 size={20} className="mr-2 animate-spin" /> Approving...</>
+                                            ) : (
+                                                <><CheckCircle size={20} className="mr-2" /> Approve</>
+                                            )}
                                         </button>
                                     </div>
                                 </div>

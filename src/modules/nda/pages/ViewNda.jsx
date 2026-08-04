@@ -171,9 +171,9 @@ const ViewNda = () => {
                                                     <img src={selectedNda.document.url} alt="NDA Document" className="max-w-full shadow-sm rounded-lg border border-gray-200" />
                                                 ) : (
                                                     <iframe 
-                                                        src={selectedNda.document.url} 
+                                                        src={`${selectedNda.document.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
                                                         title="NDA Document" 
-                                                        className="w-full h-full min-h-[500px] border border-gray-200 rounded-lg shadow-sm bg-white"
+                                                        className="w-full h-full min-h-[600px] border border-gray-200 rounded-lg shadow-sm bg-white"
                                                     />
                                                 )
                                             ) : (

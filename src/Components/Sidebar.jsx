@@ -13,7 +13,7 @@ const NAV = [
         group: "Main",
         items: [
             { name: "Dashboard", icon: LayoutDashboard, path: "/", permissions: [] },
-            { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [], hideForSuperAdmin: true }
+            { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [], hideForAdmin: true }
         ],
     },
     {
@@ -72,6 +72,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     const isSuperAdmin = user?.role?.name === "super_admin";
     const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
     const canSeeItem = (item) => {
+        if (item.hideForAdmin && isAdmin) return false;
         if (item.hideForSuperAdmin && isSuperAdmin) return false;
         if (item.superAdminOnly) return isSuperAdmin;
         if (item.adminOnly) return isAdmin;

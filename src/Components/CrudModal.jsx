@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
 
 const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSubmit, loading = false, mode = "create", onFieldChange }) => {
   const [formData, setFormData] = useState({});
+  const [showPassword, setShowPassword] = useState({});
   const modalRef = useRef(null);
   const previouslyFocusedElement = useRef(null);
 
@@ -95,7 +96,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="w-full max-w-lg max-h-[90vh] bg-white rounded-xl shadow-lg flex flex-col animate-scaleIn"
+        className="w-full max-w-2xl max-h-[90vh] bg-white rounded-xl shadow-lg flex flex-col animate-scaleIn"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -114,9 +115,10 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {fields.map((field) => (
-            <div key={field.name}>
+            <div key={field.name} className={field.fullWidth ? "sm:col-span-2" : ""}>
               <label className="block text-sm font-medium mb-1">
                 {field.label}
               </label>
@@ -264,17 +266,29 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
 
                       /* INPUT */
                       (
-                        <input
-                          type={field.type || "text"}
-                          name={field.name}
-                          value={formData[field.name] || ""}
-                          onChange={handleChange}
-                          disabled={mode === "view"}
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200"
-                        />
+                        <div className="relative w-full">
+                          <input
+                            type={field.type === "password" && showPassword[field.name] ? "text" : field.type || "text"}
+                            name={field.name}
+                            value={formData[field.name] || ""}
+                            onChange={handleChange}
+                            disabled={mode === "view"}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200 ${field.type === "password" ? "pr-10" : ""}`}
+                          />
+                          {field.type === "password" && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(prev => ({ ...prev, [field.name]: !prev[field.name] }))}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showPassword[field.name] ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          )}
+                        </div>
                       )}
             </div>
           ))}
+          </div>
         </div>
 
         {/* Footer */}

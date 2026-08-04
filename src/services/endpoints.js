@@ -191,6 +191,8 @@ export const ENDPOINTS = {
     SUBMIT: "/api/onboarding/submit",
     REQUESTS: "/api/onboarding/requests",
     APPROVE: (id) => `/api/onboarding/approve/${id}`,
+    REJECT: (id) => `/api/onboarding/reject/${id}`,
+    DOWNLOAD_OFFER_LETTER: "/api/onboarding/my-offer-letter/download",
   },
 
   LEAD: {

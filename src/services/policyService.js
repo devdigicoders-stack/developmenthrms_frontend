@@ -28,3 +28,12 @@ export const createOrUpdatePolicy = async (data) => {
         throw error.response?.data || { message: "Failed to save policy" };
     }
 };
+
+export const deletePolicy = async (id) => {
+    try {
+        const response = await api.delete(`/api/policies/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "Failed to delete policy" };
+    }
+};

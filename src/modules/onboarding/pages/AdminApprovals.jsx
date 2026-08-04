@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getOnboardingRequests, approveOnboarding } from "../../../services/onboardingService";
+import { getOnboardingRequests, approveOnboarding, rejectOnboarding } from "../../../services/onboardingService";
 import { toast } from "react-toastify";
-import { CheckCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link } from "lucide-react";
+import { CheckCircle, XCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link } from "lucide-react";
+import { FaReact } from "react-icons/fa";
 import { useStore } from "../../../context/StoreContext";
+import Swal from "sweetalert2";
 
 export default function AdminApprovals() {
     const { user } = useStore();
@@ -41,28 +43,60 @@ export default function AdminApprovals() {
         }
     };
 
+    const handleReject = async () => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you want to reject this application?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, reject it!"
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await rejectOnboarding(selectedRequest._id);
+            toast.success("Application Rejected Successfully.");
+            setSelectedRequest(null);
+            fetchRequests();
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to reject");
+        }
+    };
+
     if (loading) return <div className="p-8 text-center">Loading requests...</div>;
 
-    const filteredRequests = requests.filter(r => 
-        activeTab === "pending" ? r.status === "submitted" : r.status === "approved"
-    );
+    const filteredRequests = requests.filter(r => {
+        if (activeTab === "pending") return r.status === "submitted";
+        if (activeTab === "approved") return r.status === "approved";
+        if (activeTab === "rejected") return r.status === "rejected";
+        return false;
+    });
 
     return (
         <div className="p-6 w-full h-full">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Onboarding Approvals</h1>
             
-            <div className="flex gap-4 mb-6">
+            <div className="inline-flex bg-gray-100/80 p-1.5 rounded-2xl mb-8 border border-gray-200 shadow-inner">
                 <button 
                     onClick={() => setActiveTab("pending")}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === "pending" ? "bg-blue-600 text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
+                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "pending" ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
                 >
                     Pending Approvals
                 </button>
                 <button 
                     onClick={() => setActiveTab("approved")}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === "approved" ? "bg-green-600 text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
+                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "approved" ? "bg-white text-green-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
                 >
-                    Approved Employees
+                    Approved
+                </button>
+                <button 
+                    onClick={() => setActiveTab("rejected")}
+                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "rejected" ? "bg-white text-red-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                >
+                    Rejected
                 </button>
             </div>
 
@@ -135,11 +169,11 @@ export default function AdminApprovals() {
                         {/* Header */}
                         <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-white shadow-sm z-10 relative">
                             <div className="flex items-center gap-5">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg ring-4 ring-blue-50 transform rotate-3 hover:rotate-0 transition-all">
-                                    {selectedRequest.user?.firstName?.charAt(0) || "U"}
+                                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white shadow-lg ring-4 ring-blue-50 transform rotate-3 hover:rotate-0 transition-all">
+                                    <FaReact size={32} />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                                    <h2 className="text-xl font-bold text-gray-900 tracking-tight capitalize">
                                         {selectedRequest.user?.firstName} {selectedRequest.user?.lastName}
                                     </h2>
                                     <p className="text-sm font-medium text-gray-500 mt-0.5">{selectedRequest.user?.email}</p>
@@ -323,30 +357,38 @@ export default function AdminApprovals() {
                             </div>
 
                         </div>
-                                               {/* Approval Footer */}
-                        {selectedRequest.status !== "approved" && (
+                        {/* Approval Footer */}
+                        {selectedRequest.status === "submitted" && (
                             <div className="px-6 py-5 bg-white border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 z-10 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                                 <div>
-                                    <h3 className="font-extrabold text-gray-900 text-lg">Final Approval</h3>
+                                    <h3 className="font-extrabold text-gray-900 text-lg">Final Decision</h3>
                                     <p className="text-sm text-gray-500">Entering CTC will auto-generate Salary Structure & send Offer Letter.</p>
                                 </div>
-                                <div className="flex items-center gap-3 w-full md:w-auto">
-                                    <div className="relative w-full md:w-56">
+                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                                    <div className="relative w-full sm:w-48 md:w-56">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">₹</span>
                                         <input 
                                             type="number" 
                                             value={basicSalary}
                                             onChange={e => setBasicSalary(e.target.value)}
                                             placeholder="Monthly CTC"
-                                            className="pl-9 pr-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-900 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 w-full transition-all outline-none"
+                                            className="pl-9 pr-4 py-2.5 md:py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-900 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 w-full transition-all outline-none"
                                         />
                                     </div>
-                                    <button 
-                                        onClick={handleApprove}
-                                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center shrink-0 transform hover:-translate-y-0.5"
-                                    >
-                                        <CheckCircle size={20} className="mr-2" /> Approve
-                                    </button>
+                                    <div className="flex gap-2 w-full sm:w-auto">
+                                        <button 
+                                            onClick={handleReject}
+                                            className="flex-1 sm:flex-none bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 md:py-3 px-6 rounded-xl transition-all flex items-center justify-center transform hover:-translate-y-0.5"
+                                        >
+                                            <XCircle size={20} className="mr-2" /> Reject
+                                        </button>
+                                        <button 
+                                            onClick={handleApprove}
+                                            className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 md:py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center transform hover:-translate-y-0.5"
+                                        >
+                                            <CheckCircle size={20} className="mr-2" /> Approve
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

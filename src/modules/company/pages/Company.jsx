@@ -36,7 +36,7 @@ const Company = () => {
 
     const fields = [
         { name: "companyName", label: "Company Name", type: "text" },
-        { name: "companyAddress", label: "Address", type: "text" },
+        { name: "companyAddress", label: "Address", type: "text", fullWidth: true },
         { name: "companyDomain", label: "Domain", type: "text" },
         { name: "adminFirstName", label: "Admin First Name", type: "text" },
         { name: "adminLastName", label: "Admin Last Name", type: "text" },

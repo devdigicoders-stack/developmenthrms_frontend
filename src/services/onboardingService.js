@@ -18,3 +18,8 @@ export const approveOnboarding = async (id, basicSalary) => {
     const response = await api.post(ENDPOINTS.ONBOARDING.APPROVE(id), { basicSalary });
     return response.data;
 };
+
+export const rejectOnboarding = async (id) => {
+    const response = await api.post(ENDPOINTS.ONBOARDING.REJECT(id));
+    return response.data;
+};

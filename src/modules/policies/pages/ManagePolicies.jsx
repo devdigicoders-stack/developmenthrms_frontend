@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getAllPolicies, createOrUpdatePolicy } from '../../../services/policyService';
+import { getAllPolicies, createOrUpdatePolicy, deletePolicy } from '../../../services/policyService';
 import { useStore } from '../../../context/StoreContext';
 import { FileText, Save, Plus, File, Trash, Edit3 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -18,19 +19,21 @@ const ManagePolicies = () => {
     const [content, setContent] = useState('');
 
     useEffect(() => {
-        fetchPolicies();
+        fetchPolicies(true);
     }, [user]);
 
-    const fetchPolicies = async () => {
+    const fetchPolicies = async (autoSelect = true) => {
         try {
             setLoading(true);
             const data = await getAllPolicies(user?.companyId?._id);
             if (data.success) {
                 setPolicies(data.policies);
-                if (data.policies.length > 0) {
-                    selectPolicy(data.policies[0]);
-                } else {
-                    handleAddNew();
+                if (autoSelect) {
+                    if (data.policies.length > 0) {
+                        selectPolicy(data.policies[0]);
+                    } else {
+                        handleAddNew();
+                    }
                 }
             }
         } catch (error) {
@@ -67,12 +70,42 @@ const ManagePolicies = () => {
             const data = await createOrUpdatePolicy(payload);
             if (data.success) {
                 toast.success(data.message);
-                fetchPolicies(); // Refresh the list
+                await fetchPolicies(false); // Refresh the list without auto-selecting
+                handleAddNew(); // Clear the form
             }
         } catch (error) {
             toast.error(error.message || "Failed to save policy");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDelete = async (policyId, e) => {
+        e.stopPropagation();
+        
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you really want to delete this policy? This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+
+        if (!result.isConfirmed) return;
+        
+        try {
+            const data = await deletePolicy(policyId);
+            if (data.success) {
+                toast.success(data.message);
+                if (selectedPolicy?._id === policyId) {
+                    handleAddNew();
+                }
+                fetchPolicies(false);
+            }
+        } catch (error) {
+            toast.error(error.message || "Failed to delete policy");
         }
     };
 
@@ -153,7 +186,16 @@ const ManagePolicies = () => {
                                         <File size={16} className={selectedPolicy?._id === policy._id ? 'text-blue-600' : 'text-gray-400'} />
                                         <span className="truncate">{policy.title}</span>
                                     </div>
-                                    <span className="text-[10px] text-gray-400 pl-6">Last updated: {new Date(policy.updatedAt).toLocaleDateString()}</span>
+                                    <div className="flex items-center justify-between mt-1">
+                                        <span className="text-[10px] text-gray-400 pl-6">Last updated: {new Date(policy.updatedAt).toLocaleDateString()}</span>
+                                        <button 
+                                            onClick={(e) => handleDelete(policy._id, e)}
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                            title="Delete Policy"
+                                        >
+                                            <Trash size={14} />
+                                        </button>
+                                    </div>
                                 </button>
                             ))
                         )}

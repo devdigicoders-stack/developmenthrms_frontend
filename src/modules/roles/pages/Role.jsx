@@ -20,6 +20,7 @@ const GROUP_COLOR = {
     Project:          "bg-indigo-50 text-indigo-700 border-indigo-100",
     Task:             "bg-violet-50 text-violet-700 border-violet-100",
     Lead:             "bg-lime-50 text-lime-700 border-lime-100",
+    Notification:     "bg-red-50 text-red-700 border-red-100",
 };
 
 const formatLabel = (perm) =>

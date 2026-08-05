@@ -1,12 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import Navbar from "../Components/Navbar";
 import { useStore } from "../context/StoreContext";
+import { requestForToken, onMessageListener } from "../firebase";
+import { saveFcmTokenToBackend } from "../services/fcmService";
+import { toast } from "react-toastify";
 
 function WebLayout() {
     const { user } = useStore();
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            requestForToken().then((token) => {
+                if (token) saveFcmTokenToBackend(token).catch(console.error);
+            });
+            onMessageListener().then(payload => {
+                toast.info(`${payload.notification.title}: ${payload.notification.body}`);
+            }).catch(err => console.log('failed: ', err));
+        }
+    }, [user]);
 
     if (!user) return <Navigate to="/auth/login" replace />;
 

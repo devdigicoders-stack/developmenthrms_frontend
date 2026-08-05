@@ -1,11 +1,13 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useStore } from "../../../context/StoreContext";
 import {
     checkIn, checkOut, getTodayAttendance,
     getMyAttendance, getAttendanceSummary, getCompanyAttendance, getTeamAttendance,
     requestRegularization, getMyRegularizations, getCompanyRegularizations, getTeamRegularizations,
-    approveRegularization, rejectRegularization
+    approveRegularization, rejectRegularization,
+    manualPunch, adminCreatePunch
 } from "../services/attendanceService";
+import { fetchUsers } from "../../employee/services/UserService";
 import { getHolidays, getMyLeaves, getCompanyLeaves } from "../../leave/services/leaveService";
 import {
     MapPin, Clock, LogIn, LogOut, CheckCircle, AlertCircle,
@@ -727,6 +729,77 @@ const Attendance = () => {
     const ITEMS_PER_PAGE = 25;
     const [teamPage, setTeamPage] = useState(1);
 
+    // Admin Attendance Modals State
+    const canUpdateAttendance = isAdmin || permissions.includes("UPDATE_ATTENDANCE");
+    const canCreateAttendance = isAdmin || permissions.includes("Create_ATTENDANCE");
+    const [editPunchData, setEditPunchData] = useState(null);
+    const [showCreatePunch, setShowCreatePunch] = useState(false);
+    const [activeUsers, setActiveUsers] = useState([]);
+    const [punchForm, setPunchForm] = useState({ userId: "", date: "", checkIn: "", checkOut: "", status: "present", note: "" });
+    const [punchSubmitting, setPunchSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (showTeamTab && canCreateAttendance) {
+            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => {});
+        }
+    }, [showTeamTab, canCreateAttendance]);
+
+    const handleEditPunchSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setPunchSubmitting(true);
+            const data = {
+                checkIn: punchForm.checkIn ? `${editPunchData.date}T${punchForm.checkIn}` : null,
+                checkOut: punchForm.checkOut ? `${editPunchData.date}T${punchForm.checkOut}` : null,
+                status: punchForm.status,
+                note: punchForm.note
+            };
+            await manualPunch(editPunchData._id, data);
+            toast.success("Attendance updated successfully");
+            setEditPunchData(null);
+            loadCompanyRecords();
+        } catch (e) {
+            toast.error(e?.response?.data?.message || "Failed to update attendance");
+        } finally {
+            setPunchSubmitting(false);
+        }
+    };
+
+    const handleCreatePunchSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setPunchSubmitting(true);
+            await adminCreatePunch(punchForm);
+            toast.success("Attendance created successfully");
+            setShowCreatePunch(false);
+            loadCompanyRecords();
+        } catch (e) {
+            toast.error(e?.response?.data?.message || "Failed to create attendance");
+        } finally {
+            setPunchSubmitting(false);
+        }
+    };
+
+    const openEditModal = (rec) => {
+        setEditPunchData(rec);
+        const formatTimeForInput = (dateStr) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        };
+        setPunchForm({
+            checkIn: formatTimeForInput(rec.checkIn),
+            checkOut: formatTimeForInput(rec.checkOut),
+            status: rec.status,
+            note: rec.note || ""
+        });
+    };
+
+    const openCreateModal = () => {
+        setShowCreatePunch(true);
+        setPunchForm({ userId: "", date: currentMonth() + "-01", checkIn: "", checkOut: "", status: "present", note: "" });
+    };
+
     // Live clock
     useEffect(() => {
         const id = setInterval(() => setTime(new Date()), 1000);
@@ -1060,6 +1133,12 @@ const Attendance = () => {
                             )}
 
                             <div className="flex items-center gap-3 ml-auto">
+                                {canCreateAttendance && (
+                                    <button onClick={openCreateModal}
+                                        className="self-end mb-0.5 flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
+                                        <FileEdit size={13} /> Add Attendance
+                                    </button>
+                                )}
                                 {hasFilter && (
                                     <button onClick={clearFilters}
                                         className="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50 transition">
@@ -1121,6 +1200,7 @@ const Attendance = () => {
                                             <th className="px-4 py-3 text-left">Hours</th>
                                             <th className="px-4 py-3 text-left">Status</th>
                                             <th className="px-4 py-3 text-left">Location</th>
+                                            {canUpdateAttendance && <th className="px-4 py-3 text-center">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -1164,6 +1244,14 @@ const Attendance = () => {
                                                           </a>
                                                         : "—"}
                                                 </td>
+                                                {canUpdateAttendance && (
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button onClick={() => openEditModal(r)}
+                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition">
+                                                            <FileEdit size={14} />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1263,6 +1351,106 @@ const Attendance = () => {
                     canApprove={isAdmin || permissions.includes("APPROVE_REGULARIZATION")}
                     canReject={isAdmin || permissions.includes("REJECT_REGULARIZATION")}
                 />
+            )}
+            {/* Edit Punch Modal */}
+            {editPunchData && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">Edit Attendance</h3>
+                            <button onClick={() => setEditPunchData(null)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                        </div>
+                        <form onSubmit={handleEditPunchSubmit} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Check In Time</label>
+                                    <input type="time" value={punchForm.checkIn} onChange={e => setPunchForm(f => ({ ...f, checkIn: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Check Out Time</label>
+                                    <input type="time" value={punchForm.checkOut} onChange={e => setPunchForm(f => ({ ...f, checkOut: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                                <select value={punchForm.status} onChange={e => setPunchForm(f => ({ ...f, status: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500">
+                                    <option value="present">Present</option>
+                                    <option value="late">Late</option>
+                                    <option value="half-day">Half Day</option>
+                                    <option value="early-leave">Early Leave</option>
+                                    <option value="absent">Absent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Note (Optional)</label>
+                                <input type="text" value={punchForm.note} onChange={e => setPunchForm(f => ({ ...f, note: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" placeholder="e.g., Forgot to checkout" />
+                            </div>
+                            <div className="flex gap-3 justify-end pt-2">
+                                <button type="button" onClick={() => setEditPunchData(null)} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" disabled={punchSubmitting} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+                                    {punchSubmitting ? "Saving..." : "Save Changes"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Create Punch Modal */}
+            {showCreatePunch && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">Add Attendance</h3>
+                            <button onClick={() => setShowCreatePunch(false)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                        </div>
+                        <form onSubmit={handleCreatePunchSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Employee <span className="text-red-500">*</span></label>
+                                <select value={punchForm.userId} onChange={e => setPunchForm(f => ({ ...f, userId: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" required>
+                                    <option value="">Select Employee</option>
+                                    {activeUsers.map(u => (
+                                        <option key={u._id} value={u._id}>{u.firstName} {u.lastName} ({u.employeeCode})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Date <span className="text-red-500">*</span></label>
+                                <input type="date" value={punchForm.date} onChange={e => setPunchForm(f => ({ ...f, date: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" required max={new Date().toISOString().split("T")[0]} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Check In Time</label>
+                                    <input type="time" value={punchForm.checkIn} onChange={e => setPunchForm(f => ({ ...f, checkIn: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Check Out Time</label>
+                                    <input type="time" value={punchForm.checkOut} onChange={e => setPunchForm(f => ({ ...f, checkOut: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                                <select value={punchForm.status} onChange={e => setPunchForm(f => ({ ...f, status: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500">
+                                    <option value="present">Present</option>
+                                    <option value="late">Late</option>
+                                    <option value="half-day">Half Day</option>
+                                    <option value="early-leave">Early Leave</option>
+                                    <option value="absent">Absent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Note (Optional)</label>
+                                <input type="text" value={punchForm.note} onChange={e => setPunchForm(f => ({ ...f, note: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" placeholder="e.g., System failure, manual entry" />
+                            </div>
+                            <div className="flex gap-3 justify-end pt-2">
+                                <button type="button" onClick={() => setShowCreatePunch(false)} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" disabled={punchSubmitting} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+                                    {punchSubmitting ? "Saving..." : "Add Record"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

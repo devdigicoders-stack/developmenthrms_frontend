@@ -101,6 +101,7 @@ export const ENDPOINTS = {
     MARK_PROJECT_READ: (projectId) => `/api/notifications/mark-project-read/${projectId}`,
     DELETE: (id) => `/api/notifications/${id}`,
     CLEAR_ALL: `/api/notifications/clear-all`,
+    SEND: `/api/notifications/send`,
   },
 
   HOLIDAY: {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Bell, Check, Trash2, CheckCheck, Filter } from "lucide-react";
+import { Bell, Check, Trash2, CheckCheck, Filter, Send, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getNotifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } from "../services/notificationService";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, sendNotification } from "../services/notificationService";
 import { useNotifications } from "../../../context/NotificationContext";
+import { useStore } from "../../../context/StoreContext";
 import { toast } from "react-toastify";
 
 const TYPE_ICON = {
@@ -49,6 +50,49 @@ const Notifications = () => {
     const [tab, setTab] = useState("all");
     const [page, setPage] = useState(1);
     const LIMIT = 20;
+
+    const { user } = useStore();
+    const isAdmin = user?.role?.name === "admin" || user?.role?.name === "super_admin";
+    const canSendNotification = isAdmin || user?.role?.permissions?.includes("SEND_NOTIFICATION");
+
+    const [showSendModal, setShowSendModal] = useState(false);
+    const [sendMode, setSendMode] = useState("all");
+    const [sendForm, setSendForm] = useState({ userId: [], title: "", message: "", type: "system" });
+    const [sending, setSending] = useState(false);
+    const [activeUsers, setActiveUsers] = useState([]);
+
+    useEffect(() => {
+        if (canSendNotification) {
+            import("../../employee/services/UserService").then(m => {
+                m.fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => {});
+            });
+        }
+    }, [canSendNotification]);
+
+    const handleSendNotification = async (e) => {
+        e.preventDefault();
+        try {
+            if (sendMode === "specific" && sendForm.userId.length === 0) {
+                return toast.error("Please select at least one employee");
+            }
+            setSending(true);
+            const payload = {
+                ...sendForm,
+                userId: sendMode === "all" ? "all" : sendForm.userId
+            };
+            await sendNotification(payload);
+            toast.success("Notification sent successfully");
+            setShowSendModal(false);
+            setSendForm({ userId: [], title: "", message: "", type: "system" });
+            setSendMode("all");
+            load(true);
+            refresh();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to send notification");
+        } finally {
+            setSending(false);
+        }
+    };
 
     const load = useCallback(async (reset = false) => {
         setLoading(true);
@@ -116,6 +160,12 @@ const Notifications = () => {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    {canSendNotification && (
+                        <button onClick={() => setShowSendModal(true)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium">
+                            <Send size={15} /> Send
+                        </button>
+                    )}
                     {unreadCount > 0 && (
                         <button onClick={handleMarkAll}
                             className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-600">
@@ -217,6 +267,81 @@ const Notifications = () => {
                     </div>
                 )}
             </div>
+            {loading && page > 1 && (
+                <div className="text-center text-xs text-gray-400 py-4">Loading more...</div>
+            )}
+
+            {/* Send Notification Modal */}
+            {showSendModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">Send Notification</h3>
+                            <button onClick={() => setShowSendModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={18}/>
+                            </button>
+                        </div>
+                        <form onSubmit={handleSendNotification} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-2">Recipient(s) <span className="text-red-500">*</span></label>
+                                <div className="flex gap-4 mb-3">
+                                    <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                        <input type="radio" name="sendMode" value="all" checked={sendMode === "all"} onChange={() => setSendMode("all")} className="w-4 h-4 text-blue-600" />
+                                        All Employees
+                                    </label>
+                                    <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                        <input type="radio" name="sendMode" value="specific" checked={sendMode === "specific"} onChange={() => setSendMode("specific")} className="w-4 h-4 text-blue-600" />
+                                        Specific Employees
+                                    </label>
+                                </div>
+                                
+                                {sendMode === "specific" && (
+                                    <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto p-2 bg-gray-50">
+                                        {activeUsers.length === 0 ? (
+                                            <p className="text-xs text-gray-400 p-2 text-center">No active users found.</p>
+                                        ) : (
+                                            <div className="flex flex-col gap-1.5">
+                                                {activeUsers.map(u => (
+                                                    <label key={u._id} className="flex items-center gap-2 text-sm p-1.5 hover:bg-gray-100 rounded cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                                                            checked={sendForm.userId.includes(u._id)}
+                                                            onChange={(e) => {
+                                                                setSendForm(f => ({
+                                                                    ...f,
+                                                                    userId: e.target.checked 
+                                                                        ? [...f.userId, u._id] 
+                                                                        : f.userId.filter(id => id !== u._id)
+                                                                }));
+                                                            }}
+                                                        />
+                                                        {u.firstName} {u.lastName} <span className="text-gray-400 text-xs">({u.employeeCode})</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Title <span className="text-red-500">*</span></label>
+                                <input type="text" value={sendForm.title} onChange={e => setSendForm(f => ({ ...f, title: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" required placeholder="e.g. Meeting Reminder" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Message <span className="text-red-500">*</span></label>
+                                <textarea rows="3" value={sendForm.message} onChange={e => setSendForm(f => ({ ...f, message: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" required placeholder="Enter your message here..."></textarea>
+                            </div>
+                            <div className="flex gap-3 justify-end pt-2">
+                                <button type="button" onClick={() => setShowSendModal(false)} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" disabled={sending} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+                                    {sending ? "Sending..." : "Send"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

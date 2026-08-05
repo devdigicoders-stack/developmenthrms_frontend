@@ -35,3 +35,8 @@ export const clearAllNotifications = async () => {
     const res = await api.delete(ENDPOINTS.NOTIFICATION.CLEAR_ALL);
     return res.data;
 };
+
+export const sendNotification = async (data) => {
+    const res = await api.post(ENDPOINTS.NOTIFICATION.SEND, data);
+    return res.data;
+};

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, Pencil, Trash2, X, CalendarDays, Upload, FileText } from "lucide-react";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
 import {
     getHolidays, createHoliday, updateHoliday, deleteHoliday, bulkCreateHolidays, csvUploadHolidays,
@@ -214,7 +215,18 @@ const Holiday = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete this holiday?")) return;
+        const result = await Swal.fire({
+            title: "Delete this holiday?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+        
+        if (!result.isConfirmed) return;
+        
         try {
             await deleteHoliday(id);
             toast.success("Holiday deleted");

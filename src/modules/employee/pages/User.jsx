@@ -69,8 +69,10 @@ const User = () => {
     const loadUsers = async () => {
         try {
             const res = await fetchUsers();
+            const fetchedUsers = res.users || [];
+            const sortedUsers = fetchedUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             setUsers(
-                (res.users || []).map((u) => ({
+                sortedUsers.map((u) => ({
                     ...u,
                     joiningDate: u.joiningDate?.split("T")[0] || "",
                     dateOfBirth: u.dateOfBirth?.split("T")[0] || "",

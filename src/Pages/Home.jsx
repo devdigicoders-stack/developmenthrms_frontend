@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import {
     Users, Building2, FolderKanban, ShieldCheck, Clock,
     LogIn, LogOut, CheckCircle, TrendingUp, Receipt, CreditCard,
-    ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText,
+    ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart
 } from "lucide-react";
 import { fetchUsers } from "../modules/employee/services/UserService";
 import { fetchAllCompaniesList } from "../modules/company/services/companyService";
@@ -66,6 +66,7 @@ const Home = () => {
     const permissions = user?.role?.permissions || [];
     const isSuperAdmin = user?.role?.name === "super_admin";
     const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
+    const isClient = user?.role?.name?.toLowerCase() === "client";
     const canSee = (perms) => !perms.length || perms.some(p => permissions.includes(p));
 
     const hour = new Date().getHours();
@@ -127,15 +128,17 @@ const Home = () => {
 
     // Load attendance
     useEffect(() => {
-        getTodayAttendance().then(d => setToday(d.record)).catch(() => {});
-        getAttendanceSummary(currentMonth()).then(d => setSummary(d.summary)).catch(() => {});
+        if (!isClient) {
+            getTodayAttendance().then(d => setToday(d.record)).catch(() => {});
+            getAttendanceSummary(currentMonth()).then(d => setSummary(d.summary)).catch(() => {});
+        }
         if (isAdmin) {
             getCompanyAttendance({ date: new Date().toISOString().split("T")[0] })
                 .then(d => setTeamToday(d.records || [])).catch(() => {});
-        } else {
+        } else if (!isClient) {
             getMyTaskHistory().then(r => setTaskHistory(r.data?.data || [])).catch(() => {});
         }
-    }, [isAdmin]);
+    }, [isAdmin, isClient]);
 
     const doCheckIn = async () => {
         if (!location) return toast.error("Location unavailable");
@@ -195,7 +198,7 @@ const Home = () => {
                 {canSee(["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"]) && (
                     <StatCard icon={FolderKanban} label="Departments" value={stats.departments} sub="Across all companies" color="bg-green-50 text-green-600" to="/departments" />
                 )}
-                {summary && (
+                {summary && !isClient && (
                     <StatCard icon={TrendingUp} label="Hours This Month" value={`${summary.totalHours}h`} sub={`${summary.totalDays} days tracked`} color="bg-indigo-50 text-indigo-600" to="/attendance" />
                 )}
             </div>
@@ -210,6 +213,8 @@ const Home = () => {
                 </div>
             )}
 
+            {/* Admin / Employee Dashboard Grid */}
+            {!isClient && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Check-in Card */}
                 <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
@@ -305,7 +310,7 @@ const Home = () => {
                     )}
                 </div>
 
-                {/* Team Today (admin only) */}
+                {/* Team Today or Task History */}
                 {isAdmin ? (
                     <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -332,47 +337,143 @@ const Home = () => {
                         )}
                     </div>
                 ) : (
-                    /* Task History for non-admin */
+                    /* Employee Task History */
                     <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold text-gray-800">My Task History</h2>
-                            <Link to="/projects" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View projects <ArrowRight size={12} /></Link>
-                        </div>
-                        {taskHistory.length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-8">No task assignments yet.</p>
-                        ) : (
-                            <div className="space-y-3 max-h-64 overflow-y-auto no-scrollbar">
-                                {taskHistory.map(t => (
-                                    <div key={t._id} className="border border-gray-100 rounded-xl p-3">
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize shrink-0">{t.status?.replace("_", " ")}</span>
-                                        </div>
-                                        {t.project?.name && (
-                                            <p className="text-[10px] text-blue-500 mb-1.5">{t.project.name}</p>
-                                        )}
-                                        <div className="space-y-1">
-                                            {t.history.slice(0, 3).map((h, i) => (
-                                                <div key={i} className="flex items-center gap-1.5 text-[10px]">
-                                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                                        h.action === "assigned" ? "bg-green-500" : "bg-red-400"
-                                                    }`} />
-                                                    <span className={h.action === "assigned" ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
-                                                        {h.action === "assigned" ? "Assigned" : "Removed"}
-                                                    </span>
-                                                    <span className="text-gray-400 ml-auto">
-                                                        {new Date(h.at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
+                                <h2 className="font-semibold text-gray-800">My Task History</h2>
+                                <Link to="/projects" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View projects <ArrowRight size={12} /></Link>
                             </div>
-                        )}
-                    </div>
+                            {taskHistory.length === 0 ? (
+                                <p className="text-sm text-gray-400 text-center py-8">No task assignments yet.</p>
+                            ) : (
+                                <div className="space-y-3 max-h-64 overflow-y-auto no-scrollbar">
+                                    {taskHistory.map(t => (
+                                        <div key={t._id} className="border border-gray-100 rounded-xl p-3">
+                                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize shrink-0">{t.status?.replace("_", " ")}</span>
+                                            </div>
+                                            {t.project?.name && (
+                                                <p className="text-[10px] text-blue-500 mb-1.5">{t.project.name}</p>
+                                            )}
+                                            <div className="space-y-1">
+                                                {t.history.slice(0, 3).map((h, i) => (
+                                                    <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                                                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                                            h.action === "assigned" ? "bg-green-500" : "bg-red-400"
+                                                        }`} />
+                                                        <span className={h.action === "assigned" ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
+                                                            {h.action === "assigned" ? "Assigned" : "Removed"}
+                                                        </span>
+                                                        <span className="text-gray-400 ml-auto">
+                                                            {new Date(h.at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                 )}
             </div>
+            )}
+
+            {/* Client Dashboard Grid */}
+            {isClient && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Final Proposal */}
+                    {user?.finalProposal?.url && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-800">My Final Proposal</h2>
+                                    <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-md flex items-center gap-1"><FileText size={12} /> Document</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-6">Review your final approved project proposal details and terms.</p>
+                            </div>
+                            <div className="flex justify-center pb-2">
+                                <a href={user.finalProposal.url} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                    <FileText size={18} /> View Proposal
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* My NDA */}
+                    {canSee(["VIEW_NDA"]) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-800">My NDA</h2>
+                                    <span className="text-xs text-purple-500 bg-purple-50 px-2 py-1 rounded-md flex items-center gap-1"><ShieldCheck size={12} /> Document</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-6">Access your signed Non-Disclosure Agreement for confidentiality.</p>
+                            </div>
+                            <div className="flex justify-center pb-2">
+                                <Link to="/client-nda" className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                    <ShieldCheck size={18} /> View NDA
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* My Projects */}
+                    {canSee(["VIEW_PROJECT", "VIEW_ALL_PROJECTS"]) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-800">My Projects</h2>
+                                    <span className="text-xs text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md flex items-center gap-1"><FolderKanban size={12} /> Workspace</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-6">Track your ongoing deliverables, project milestones, and status.</p>
+                            </div>
+                            <div className="flex justify-center pb-2">
+                                <Link to="/projects" className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                    <FolderKanban size={18} /> Go to Projects
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Complaints */}
+                    {canSee(["CREATE_COMPLAINT", "VIEW_COMPLAINT"]) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-800">My Complaints</h2>
+                                    <span className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded-md flex items-center gap-1"><AlertCircle size={12} /> Support</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-6">Raise issues, track complaint resolutions, and get support.</p>
+                            </div>
+                            <div className="flex justify-center pb-2">
+                                <Link to="/my-complaints" className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                    <AlertCircle size={18} /> View Complaints
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Submit Payment */}
+                    {canSee(["SUBMIT_PAYMENT"]) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-800">Payments</h2>
+                                    <span className="text-xs text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md flex items-center gap-1"><IndianRupee size={12} /> Finance</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-6">Pay invoices, view billing details, and upload transaction proofs.</p>
+                            </div>
+                            <div className="flex justify-center pb-2">
+                                <Link to="/submit-payment" className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                    <IndianRupee size={18} /> Submit Payment
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Bottom Quick Links (admin) */}
             {isAdmin && (

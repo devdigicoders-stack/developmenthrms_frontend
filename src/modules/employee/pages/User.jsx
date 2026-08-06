@@ -142,7 +142,18 @@ const User = () => {
         if (!hasPermission("Create_USER")) return;
         try {
             setLoading(true);
-            const res = await createUser(data);
+            
+            let payload = data;
+            if (data.finalProposal instanceof File) {
+                payload = new FormData();
+                Object.keys(data).forEach(key => {
+                    if (data[key] !== undefined && data[key] !== null) {
+                        payload.append(key, data[key]);
+                    }
+                });
+            }
+            
+            const res = await createUser(payload);
             if (res.success) {
                 toast.success(res.message || "Employee created successfully");
                 loadUsers();
@@ -164,7 +175,18 @@ const User = () => {
         if (!hasPermission("UPDATE_USER")) return;
         try {
             setLoading(true);
-            const res = await updateUser(data);
+            
+            let payload = data;
+            if (data.finalProposal instanceof File) {
+                payload = new FormData();
+                Object.keys(data).forEach(key => {
+                    if (data[key] !== undefined && data[key] !== null) {
+                        payload.append(key, data[key]);
+                    }
+                });
+            }
+            
+            const res = await updateUser(payload);
             if (res.success) {
                 toast.success(res.message || "Employee updated successfully");
                 loadUsers();

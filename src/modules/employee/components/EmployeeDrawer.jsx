@@ -271,6 +271,21 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                                 {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
                             </div>
                         </div>
+
+                        {roles.find(r => r._id === form.role)?.name?.toLowerCase() === "client" && (
+                            <div className="mt-4">
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Final Proposal (PDF) - Optional</label>
+                                <input 
+                                    type="file" 
+                                    accept=".pdf"
+                                    onChange={(e) => set("finalProposal", e.target.files[0])}
+                                    className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                                />
+                                {isEdit && initialData?.finalProposal?.url && (
+                                    <p className="text-xs text-gray-500 mt-1">Current: <a href={initialData.finalProposal.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">View Document</a></p>
+                                )}
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <Field label="Employee Code" icon={Briefcase}>
                                 <input type="text" value={form.employeeCode || ""} onChange={(e) => set("employeeCode", e.target.value)} placeholder="EMP-001" />

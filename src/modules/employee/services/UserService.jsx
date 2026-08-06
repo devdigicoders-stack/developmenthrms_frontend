@@ -12,7 +12,8 @@ export const createUser = async (data) => {
 };
 
 export const updateUser = async (data) => {
-    const res = await api.put(ENDPOINTS.USER.UPDATE_USER(data._id), data);
+    const id = data instanceof FormData ? data.get('_id') : data._id;
+    const res = await api.put(ENDPOINTS.USER.UPDATE_USER(id), data);
     return res.data;
 };
 

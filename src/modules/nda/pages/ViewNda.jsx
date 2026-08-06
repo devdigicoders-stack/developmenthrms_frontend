@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import SignatureCanvas from "react-signature-canvas";
 import { getAllNdas, signNda, getMySignatures } from "../../../services/ndaService";
 import DOMPurify from 'dompurify';
+import ClientMyNda from "./ClientMyNda";
 
 const ViewNda = () => {
     const { user } = useStore();
@@ -21,6 +22,11 @@ const ViewNda = () => {
     const [isSigning, setIsSigning] = useState(false);
     const sigPadRef = useRef(null);
 
+    // If role is Client, show their specific My NDA view
+    if (user?.role?.name?.toLowerCase() === "client") {
+        return <ClientMyNda />;
+    }
+
     useEffect(() => {
         fetchData();
     }, [user?.companyId]);
@@ -34,7 +40,9 @@ const ViewNda = () => {
             ]);
             
             if (ndasRes.success) setNdas(ndasRes.ndas);
-            if (sigsRes.success) setMySignatures(sigsRes.signatures.map(s => s.ndaId));
+            if (sigsRes.success) {
+                setMySignatures(sigsRes.signatures.map(s => s.ndaId?._id || s.ndaId));
+            }
         } catch (error) {
             toast.error(error.message || "Failed to fetch NDAs");
         } finally {

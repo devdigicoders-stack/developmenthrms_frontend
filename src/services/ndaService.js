@@ -60,3 +60,21 @@ export const getMySignatures = async () => {
         throw error.response?.data || error.message;
     }
 };
+
+export const getClientNdaSignatures = async () => {
+    try {
+        const res = await api.get(`/api/nda/client/signatures`);
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getClientNdaTemplate = async () => {
+    try {
+        const res = await api.get(`/api/nda/client/template`);
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

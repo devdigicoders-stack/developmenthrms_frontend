@@ -27,6 +27,7 @@ import Policies from "../modules/policies/pages/Policies";
 import ManagePolicies from "../modules/policies/pages/ManagePolicies";
 import ViewNda from "../modules/nda/pages/ViewNda";
 import ManageNda from "../modules/nda/pages/ManageNda";
+import MyProposal from "../pages/MyProposal";
 
 // Onboarding imports
 import OnboardingLayout from "../layout/OnboardingLayout";
@@ -35,8 +36,16 @@ import PendingApproval from "../modules/onboarding/pages/PendingApproval";
 import AdminApprovals from "../modules/onboarding/pages/AdminApprovals";
 
 import OfferLetter from "../modules/onboarding/pages/OfferLetter";
+import ClientNdaPage from "../modules/onboarding/pages/ClientNdaPage";
+import MyComplaints from "../modules/complaints/pages/MyComplaints";
+import ManageComplaints from "../modules/complaints/pages/ManageComplaints";
+import SubmitPayment from "../modules/payments/pages/SubmitPayment";
+import ManagePayments from "../modules/payments/pages/ManagePayments";
 
 const AppRoute = createBrowserRouter([
+    {
+        path: "/client-nda", element: <ClientNdaPage />
+    },
     {
         path: "/auth", element: <AuthLayout />,
         children: [
@@ -76,6 +85,11 @@ const AppRoute = createBrowserRouter([
             { path: "/manage-policies", element: <ManagePolicies /> },
             { path: "/nda", element: <ViewNda /> },
             { path: "/manage-nda", element: <ManageNda /> },
+            { path: "/my-proposal", element: <MyProposal /> },
+            { path: "/my-complaints", element: <MyComplaints /> },
+            { path: "/manage-complaints", element: <ManageComplaints /> },
+            { path: "/submit-payment", element: <SubmitPayment /> },
+            { path: "/manage-payments", element: <ManagePayments /> },
             { path: "/notifications", element: <Notifications /> },
             { path: "/settings", element: <Settings /> },
             { path: "/settings/roles", element: <Role /> },

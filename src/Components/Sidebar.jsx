@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import {
     LayoutDashboard, Users, Building2, FolderKanban, ShieldCheck,
-    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt
+    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import { authlogout } from "../modules/auth/services/authService";
@@ -13,7 +13,11 @@ const NAV = [
         group: "Main",
         items: [
             { name: "Dashboard", icon: LayoutDashboard, path: "/", permissions: [] },
-            { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [], hideForAdmin: true }
+            { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [], hideForAdmin: true, hideForClient: true },
+            { name: "My NDA", icon: FileText, path: "/nda", permissions: [], clientOnly: true },
+            { name: "My Proposal", icon: FileText, path: "/my-proposal", permissions: [], clientOnly: true },
+            { name: "My Complaints", icon: AlertCircle, path: "/my-complaints", permissions: ["CREATE_COMPLAINT", "VIEW_COMPLAINT"] },
+            { name: "Submit Payment", icon: IndianRupee, path: "/submit-payment", permissions: ["SUBMIT_PAYMENT"] }
         ],
     },
     {
@@ -22,12 +26,14 @@ const NAV = [
             { name: "Companies",   icon: Building2,    path: "/companies",      superAdminOnly: true },
             { name: "Departments", icon: FolderKanban, path: "/departments",    permissions: ["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"] },
             { name: "Roles",       icon: ShieldCheck,  path: "/settings/roles", permissions: ["VIEW_ROLE", "VIEW_ALL_ROLES"] },
-            { name: "Manage Policies", icon: ShieldCheck,  path: "/manage-policies", superAdminOnly: true },
-            { name: "Policies",    icon: FileText,     path: "/policies",       permissions: [] },
-            { name: "Manage NDA",  icon: ShieldCheck,  path: "/manage-nda",     superAdminOnly: true },
-            { name: "NDA",         icon: FileText,     path: "/nda",            permissions: [] },
+            { name: "Manage Policies", icon: ShieldCheck,  path: "/manage-policies", permissions: ["MANAGE_POLICY"] },
+            { name: "Policies",    icon: FileText,     path: "/policies",       permissions: ["VIEW_POLICY"] },
+            { name: "Manage NDA",  icon: ShieldCheck,  path: "/manage-nda",     permissions: ["MANAGE_NDA"] },
+            { name: "NDA",         icon: FileText,     path: "/nda",            permissions: ["VIEW_NDA"], hideForClient: true },
+            { name: "Manage Complaints", icon: AlertCircle, path: "/manage-complaints", permissions: ["MANAGE_COMPLAINT"] },
             { name: "Employees",   icon: Users,        path: "/users",          permissions: ["VIEW_USER", "VIEW_ALL_USERS"] },
             { name: "Onboarding Approvals", icon: UserCheck, path: "/onboarding-approvals", permissions: ["APPROVE_ONBOARDING", "MANAGE_USER"] },
+            { name: "Manage Payments", icon: IndianRupee, path: "/manage-payments", permissions: ["MANAGE_PAYMENTS"] },
         ],
     },
     {
@@ -71,9 +77,13 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
 
     const isSuperAdmin = user?.role?.name === "super_admin";
     const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
+    const isClient = user?.role?.name?.toLowerCase() === "client";
+    
     const canSeeItem = (item) => {
         if (item.hideForAdmin && isAdmin) return false;
         if (item.hideForSuperAdmin && isSuperAdmin) return false;
+        if (item.hideForClient && isClient) return false;
+        if (item.clientOnly && !isClient) return false;
         if (item.superAdminOnly) return isSuperAdmin;
         if (item.adminOnly) return isAdmin;
         const perms = item.permissions || [];

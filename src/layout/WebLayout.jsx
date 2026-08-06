@@ -25,8 +25,15 @@ function WebLayout() {
     if (!user) return <Navigate to="/auth/login" replace />;
 
     // Intercept users who haven't completed onboarding
-    const isSuperAdmin = user?.role?.name === "super_admin";
-    if (!isSuperAdmin) {
+    const roleName = user?.role?.name?.toLowerCase();
+    
+    if (roleName === "client" && user?.clientNdaStatus === "pending") {
+        return <Navigate to="/client-nda" replace />;
+    }
+
+    const skipOnboarding = roleName === "super_admin" || roleName === "admin" || roleName === "client";
+    
+    if (!skipOnboarding) {
         if (user.onboardingStatus === "pending_form") {
             return <Navigate to="/onboarding" replace />;
         }

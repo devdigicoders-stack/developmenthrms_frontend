@@ -21,6 +21,9 @@ const GROUP_COLOR = {
     Task:             "bg-violet-50 text-violet-700 border-violet-100",
     Lead:             "bg-lime-50 text-lime-700 border-lime-100",
     Notification:     "bg-red-50 text-red-700 border-red-100",
+    Policy:           "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100",
+    NDA:              "bg-amber-50 text-amber-700 border-amber-100",
+    Complaint:        "bg-sky-50 text-sky-700 border-sky-100",
 };
 
 const formatLabel = (perm) =>

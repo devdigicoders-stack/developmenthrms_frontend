@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useStore } from "../../../context/StoreContext";
-import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2 } from "lucide-react";
+import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users } from "lucide-react";
 import { toast } from "react-toastify";
-import { getAllNdas, createOrUpdateNda, getNdaSignatures, deleteNda } from "../../../services/ndaService";
+import { getAllNdas, createOrUpdateNda, getNdaSignatures, deleteNda, getClientNdaSignatures } from "../../../services/ndaService";
 
 const ManageNda = () => {
     const { user } = useStore();
     const [ndas, setNdas] = useState([]);
+    const [clientSignatures, setClientSignatures] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("employee"); // "employee" or "client"
     
     // Editor State
     const [title, setTitle] = useState("");
@@ -25,6 +27,7 @@ const ManageNda = () => {
 
     useEffect(() => {
         fetchNdas();
+        fetchClientSignatures();
     }, [user?.companyId]);
 
     const fetchNdas = async () => {
@@ -36,6 +39,15 @@ const ManageNda = () => {
             toast.error(error.message || "Failed to fetch NDAs");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchClientSignatures = async () => {
+        try {
+            const res = await getClientNdaSignatures();
+            if (res.success) setClientSignatures(res.signatures);
+        } catch (error) {
+            console.error("Failed to fetch client signatures:", error);
         }
     };
 
@@ -71,6 +83,7 @@ const ManageNda = () => {
         toast.info("Cannot edit document file directly. Create a new NDA or update title & audience.");
         setTitle(n.title);
         setTargetAudience(n.targetAudience || "Employee");
+        setActiveTab("employee");
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -117,14 +130,38 @@ const ManageNda = () => {
                         <p className="text-sm text-gray-500 mt-1">Create or update Non-Disclosure Agreements</p>
                     </div>
                 </div>
+                
+                {/* Tabs */}
+                <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+                    <button 
+                        onClick={() => setActiveTab("employee")}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                            activeTab === "employee" ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                        }`}
+                    >
+                        <FileText size={16} />
+                        Employee NDAs
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab("client")}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                            activeTab === "client" ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                        }`}
+                    >
+                        <Users size={16} />
+                        Client NDAs
+                    </button>
+                </div>
             </div>
 
-            {/* Editor Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-                    <Plus size={18} className="text-blue-600" />
-                    <h2 className="text-base font-semibold text-gray-800">New / Edit NDA</h2>
-                </div>
+            {activeTab === "employee" ? (
+                <>
+                    {/* Editor Section */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                            <Plus size={18} className="text-blue-600" />
+                            <h2 className="text-base font-semibold text-gray-800">New / Edit NDA</h2>
+                        </div>
 
                 <div className="p-4 md:p-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -148,6 +185,7 @@ const ManageNda = () => {
                                 <option value="Employee">Employees Only</option>
                                 <option value="Intern">Interns Only</option>
                                 <option value="Both">Both (Employees & Interns)</option>
+                                <option value="Client">Client</option>
                             </select>
                         </div>
                     </div>
@@ -209,7 +247,7 @@ const ManageNda = () => {
                         </div>
                     ) : (
                         <div className="grid gap-4 sm:grid-cols-2">
-                            {ndas.map((n) => (
+                            {ndas.filter(n => n.targetAudience !== 'Client').map((n) => (
                                 <div key={n._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all bg-white group flex flex-col justify-between">
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
@@ -257,6 +295,123 @@ const ManageNda = () => {
                     )}
                 </div>
             </div>
+            </>
+            ) : (
+                <div className="flex flex-col gap-6">
+                    {/* Client NDA Templates Section */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3">
+                            <File size={18} className="text-blue-600" />
+                            <h2 className="text-base font-semibold text-gray-800">Existing Client NDAs</h2>
+                        </div>
+                        <div className="p-4 md:p-6">
+                            {ndas.filter(n => n.targetAudience === 'Client').length === 0 ? (
+                                <div className="text-center py-12 px-4">
+                                    <FileText size={48} className="mx-auto text-gray-200 mb-4" />
+                                    <p className="text-gray-500">No Client NDAs found. Create one from the Employee/Intern tab by selecting "Client" audience.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    {ndas.filter(n => n.targetAudience === 'Client').map((n) => (
+                                        <div key={n._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all bg-white group flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                                            <FileText size={16} />
+                                                        </div>
+                                                        <h3 className="font-semibold text-gray-800 truncate">{n.title}</h3>
+                                                    </div>
+                                                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700">
+                                                        Client
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-2">
+                                                    Last updated: {new Date(n.updatedAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
+                                                <button 
+                                                    onClick={() => handleEdit(n)}
+                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-medium transition"
+                                                >
+                                                    <Edit3 size={14} /> Edit
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteClick(n)}
+                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition"
+                                                >
+                                                    <Trash2 size={14} /> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                        <Users size={18} className="text-blue-600" />
+                        <h2 className="text-base font-semibold text-gray-800">Client NDA Signatures</h2>
+                    </div>
+                    <div className="p-4 md:p-6">
+                        {clientSignatures.length === 0 ? (
+                            <div className="text-center py-12 px-4">
+                                <FileText size={48} className="mx-auto text-gray-200 mb-4" />
+                                <p className="text-gray-500">No client signatures yet.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left border-collapse">
+                                    <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                                        <tr>
+                                            <th className="px-6 py-4 font-semibold">Client</th>
+                                            <th className="px-6 py-4 font-semibold">Email</th>
+                                            <th className="px-6 py-4 font-semibold">Signed On</th>
+                                            <th className="px-6 py-4 font-semibold text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {clientSignatures.map((sig) => (
+                                            <tr key={sig._id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                                            {sig.userId?.firstName?.[0] || 'C'}
+                                                        </div>
+                                                        <span className="font-medium text-gray-900">
+                                                            {sig.userId?.firstName} {sig.userId?.lastName}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-600">{sig.userId?.email || 'N/A'}</td>
+                                                <td className="px-6 py-4 text-gray-600">{new Date(sig.createdAt).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {sig.signedDocumentUrl ? (
+                                                        <a
+                                                            href={sig.signedDocumentUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition"
+                                                        >
+                                                            <FileText size={14} /> View Document
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-gray-400 text-xs">No File</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            )}
 
             {/* Signatures Modal */}
             {showSignatures && (

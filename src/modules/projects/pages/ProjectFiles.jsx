@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Upload, Link2, FileText, Trash2, X, Plus, ExternalLink, Lock, Globe, KeyRound, Image, Film, Archive, ChevronDown, ChevronUp, Copy, Check, Download, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
+import { useStore } from "../../../context/StoreContext";
 import { getFileBundles, createFileBundle, deleteFileBundle, updateBundleAccess, updateFileBundle } from "../services/projectService";
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
@@ -522,7 +523,9 @@ const ProjectFiles = ({ projectId, members, currentUserId, isAdmin, isClientView
     const [envEditBundle, setEnvEditBundle] = useState(null);
     const [envSaving, setEnvSaving] = useState(false);
 
-    const canManage = isAdmin || serverIsAdmin;
+    const { user } = useStore();
+    const canUploadFile = user?.role?.name === "super_admin" || user?.role?.permissions?.includes("UPLOAD_PROJECT_FILE");
+    const canManage = serverIsAdmin || canUploadFile;
 
     const load = async () => {
         try {

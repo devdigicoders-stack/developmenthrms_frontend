@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, Paperclip, MessageSquare, Trash2, X, Upload, Link2, FolderOpen } from "lucide-react";
+import { ArrowLeft, Plus, Paperclip, MessageSquare, Trash2, X, Upload, Link2, FolderOpen, Ticket } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import { useNotifications } from "../../../context/NotificationContext";
@@ -220,8 +220,11 @@ const ProjectDetail = () => {
     const { user } = useStore();
     const { refresh: refreshNotifications } = useNotifications();
     const isSuperAdmin = user?.role?.name === "super_admin";
-    const isAdmin = isSuperAdmin || user?.role?.permissions?.some(p => ["CREATE_TASK", "UPDATE_TASK"].includes(p));
-    const canDeleteTask = isSuperAdmin || user?.role?.permissions?.some(p => p === "DELETE_TASK");
+    const canCreateTask = isSuperAdmin || user?.role?.permissions?.includes("CREATE_TASK");
+    const canUpdateTask = isSuperAdmin || user?.role?.permissions?.includes("UPDATE_TASK");
+    const isAdmin = isSuperAdmin || canCreateTask || canUpdateTask;
+    const canDeleteTask = isSuperAdmin || user?.role?.permissions?.includes("DELETE_TASK");
+    const canRaiseTicket = isSuperAdmin || user?.role?.permissions?.includes("RAISE_TICKET");
 
     const [project, setProject] = useState(null);
     const [tasks, setTasks] = useState([]);
@@ -351,7 +354,13 @@ const ProjectDetail = () => {
                             </div>
                         ))}
                     </div>
-                    {(isAdmin || isClientView) && activeTab === "board" && (
+                    {canRaiseTicket && (
+                        <button onClick={() => navigate(`/my-tickets?projectId=${id}`)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition">
+                            <Ticket size={15} /> Raise Ticket
+                        </button>
+                    )}
+                    {canCreateTask && activeTab === "board" && (
                         <button onClick={() => setDrawerOpen(true)}
                             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
                             <Plus size={15} /> Add Task

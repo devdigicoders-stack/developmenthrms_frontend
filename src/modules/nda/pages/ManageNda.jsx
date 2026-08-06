@@ -132,23 +132,23 @@ const ManageNda = () => {
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+                <div className="flex items-center bg-gray-50/80 p-1.5 rounded-xl border border-gray-100/50">
                     <button 
                         onClick={() => setActiveTab("employee")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                            activeTab === "employee" ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                        className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                            activeTab === "employee" ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
                         }`}
                     >
-                        <FileText size={16} />
+                        <FileText size={15} />
                         Employee NDAs
                     </button>
                     <button 
                         onClick={() => setActiveTab("client")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                            activeTab === "client" ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                        className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                            activeTab === "client" ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
                         }`}
                     >
-                        <Users size={16} />
+                        <Users size={15} />
                         Client NDAs
                     </button>
                 </div>
@@ -158,73 +158,79 @@ const ManageNda = () => {
                 <>
                     {/* Editor Section */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                        <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-                            <Plus size={18} className="text-blue-600" />
-                            <h2 className="text-base font-semibold text-gray-800">New / Edit NDA</h2>
+                        <div className="p-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/30">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                <Plus size={16} />
+                            </div>
+                            <h2 className="text-base font-bold text-gray-800">New / Edit NDA</h2>
                         </div>
 
-                <div className="p-4 md:p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">NDA Title</label>
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="e.g., Standard Employee NDA"
-                                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Target Audience</label>
-                            <select
-                                value={targetAudience}
-                                onChange={(e) => setTargetAudience(e.target.value)}
-                                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
-                            >
-                                <option value="Employee">Employees Only</option>
-                                <option value="Intern">Interns Only</option>
-                                <option value="Both">Both (Employees & Interns)</option>
-                                <option value="Client">Client</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col mt-4">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Upload NDA Document (PDF/Image)</label>
-                        <div className="relative w-full border-2 border-dashed border-gray-300 rounded-xl p-8 hover:bg-gray-50 transition-colors group cursor-pointer bg-white">
-                            <input
-                                id="nda-file"
-                                type="file"
-                                accept=".pdf,image/*,.doc,.docx"
-                                onChange={(e) => setFile(e.target.files[0])}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
-                            <div className="flex flex-col items-center justify-center text-gray-500 group-hover:text-blue-600 transition-colors">
-                                <UploadCloud size={40} className="mb-3 text-gray-400 group-hover:text-blue-500" />
-                                <p className="text-sm font-medium mb-1">
-                                    {file ? file.name : "Click or drag file to this area to upload"}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : "Support for a single or bulk upload. Strictly prohibit from uploading company data or other band files."}
-                                </p>
+                        <div className="p-6 md:p-8 space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-gray-700">NDA Title <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        placeholder="e.g., Standard Employee NDA"
+                                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50/50 focus:bg-white"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-gray-700">Target Audience <span className="text-red-500">*</span></label>
+                                    <select
+                                        value={targetAudience}
+                                        onChange={(e) => setTargetAudience(e.target.value)}
+                                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50/50 focus:bg-white cursor-pointer"
+                                    >
+                                        <option value="Employee">Employees Only</option>
+                                        <option value="Intern">Interns Only</option>
+                                        <option value="Both">Both (Employees & Interns)</option>
+                                        <option value="Client">Client</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                <label className="block text-sm font-bold text-gray-700">Upload NDA Document (PDF/Image) <span className="text-red-500">*</span></label>
+                                <div className="relative w-full border-2 border-dashed border-gray-200 rounded-2xl p-10 hover:border-blue-400 hover:bg-blue-50/50 transition-all group cursor-pointer bg-gray-50/30">
+                                    <input
+                                        id="nda-file"
+                                        type="file"
+                                        accept=".pdf,image/*,.doc,.docx"
+                                        onChange={(e) => setFile(e.target.files[0])}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                            <UploadCloud size={28} className="text-blue-500" />
+                                        </div>
+                                        <h3 className="text-base font-bold text-gray-800 mb-1">
+                                            {file ? file.name : "Click or drag file here to upload"}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 max-w-sm mb-3">
+                                            {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : "Supports PDF, DOC, DOCX, PNG, JPG formats."}
+                                        </p>
+                                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                                            Max file size: 10MB
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-400 mt-2">Maximum file size: 10MB</p>
-                    </div>
-                </div>
 
-                <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
-                    <button
-                        onClick={handleSaveNda}
-                        disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-sm hover:shadow disabled:opacity-70"
-                    >
-                        <Save size={16} />
-                        {isSaving ? "Saving..." : "Save NDA"}
-                    </button>
-                </div>
-            </div>
+                        <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+                            <button
+                                onClick={handleSaveNda}
+                                disabled={isSaving}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                                <Save size={16} />
+                                {isSaving ? "Saving..." : "Save NDA"}
+                            </button>
+                        </div>
+                    </div>
 
             {/* List Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -246,7 +252,7 @@ const ManageNda = () => {
                             <p className="text-gray-500">No NDAs found.</p>
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                             {ndas.filter(n => n.targetAudience !== 'Client').map((n) => (
                                 <div key={n._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all bg-white group flex flex-col justify-between">
                                     <div>
@@ -257,7 +263,7 @@ const ManageNda = () => {
                                                 </div>
                                                 <h3 className="font-semibold text-gray-800 truncate">{n.title}</h3>
                                             </div>
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                                                 n.targetAudience === 'Intern' ? 'bg-purple-100 text-purple-700' :
                                                 n.targetAudience === 'Employee' ? 'bg-blue-100 text-blue-700' :
                                                 'bg-gray-100 text-gray-700'
@@ -270,13 +276,7 @@ const ManageNda = () => {
                                         </p>
                                     </div>
                                     <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
-                                        <button 
-                                            onClick={() => handleEdit(n)}
-                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-medium transition"
-                                        >
-                                            <Edit3 size={14} /> Edit
-                                        </button>
-                                        <button 
+                                        <button  
                                             onClick={() => handleViewSignatures(n)}
                                             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg text-xs font-medium transition"
                                         >
@@ -311,7 +311,7 @@ const ManageNda = () => {
                                     <p className="text-gray-500">No Client NDAs found. Create one from the Employee/Intern tab by selecting "Client" audience.</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                                     {ndas.filter(n => n.targetAudience === 'Client').map((n) => (
                                         <div key={n._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all bg-white group flex flex-col justify-between">
                                             <div>
@@ -322,7 +322,7 @@ const ManageNda = () => {
                                                         </div>
                                                         <h3 className="font-semibold text-gray-800 truncate">{n.title}</h3>
                                                     </div>
-                                                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700">
+                                                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 shrink-0">
                                                         Client
                                                     </span>
                                                 </div>
@@ -331,12 +331,6 @@ const ManageNda = () => {
                                                 </p>
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
-                                                <button 
-                                                    onClick={() => handleEdit(n)}
-                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-medium transition"
-                                                >
-                                                    <Edit3 size={14} /> Edit
-                                                </button>
                                                 <button 
                                                     onClick={() => handleDeleteClick(n)}
                                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition"
@@ -368,6 +362,7 @@ const ManageNda = () => {
                                     <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
                                         <tr>
                                             <th className="px-6 py-4 font-semibold">Client</th>
+                                            <th className="px-6 py-4 font-semibold">NDA Name</th>
                                             <th className="px-6 py-4 font-semibold">Email</th>
                                             <th className="px-6 py-4 font-semibold">Signed On</th>
                                             <th className="px-6 py-4 font-semibold text-right">Action</th>
@@ -386,6 +381,7 @@ const ManageNda = () => {
                                                         </span>
                                                     </div>
                                                 </td>
+                                                <td className="px-6 py-4 text-gray-800 font-medium">{sig.ndaId?.title || 'N/A'}</td>
                                                 <td className="px-6 py-4 text-gray-600">{sig.userId?.email || 'N/A'}</td>
                                                 <td className="px-6 py-4 text-gray-600">{new Date(sig.createdAt).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 text-right">

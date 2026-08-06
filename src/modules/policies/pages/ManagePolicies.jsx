@@ -114,7 +114,7 @@ const ManagePolicies = () => {
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Edit3 className="text-blue-600" /> Manage Policies
+                        <Edit3 className="text-blue-600" /> Manage Privacy and Policy
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Create or update company policies and NDAs</p>
                 </div>

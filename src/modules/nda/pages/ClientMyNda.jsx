@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FileText, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { getMySignatures } from "../../../services/ndaService";
+import ClientNdaPage from "../../onboarding/pages/ClientNdaPage";
 
 const ClientMyNda = () => {
     const [signature, setSignature] = useState(null);
@@ -35,19 +36,7 @@ const ClientMyNda = () => {
     }
 
     if (!signature || !signature.signedDocumentUrl) {
-        return (
-            <div className="p-6 h-full min-h-[80vh] flex flex-col items-center justify-center bg-gray-50">
-                <div className="text-center max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-                    <div className="mx-auto w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                        <FileText size={32} />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">No NDA Found</h2>
-                    <p className="text-gray-500 mb-6">
-                        You have not signed an NDA yet, or the document is not available.
-                    </p>
-                </div>
-            </div>
-        );
+        return <ClientNdaPage inPanel={true} />;
     }
 
     const docUrl = signature.signedDocumentUrl;

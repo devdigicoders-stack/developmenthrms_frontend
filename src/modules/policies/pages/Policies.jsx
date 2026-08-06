@@ -36,7 +36,7 @@ const Policies = () => {
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <FileText className="text-blue-600" /> Company Policies
+                        <FileText className="text-blue-600" /> View Policy
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Review the company policies and agreements</p>
                 </div>

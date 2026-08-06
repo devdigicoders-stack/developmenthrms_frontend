@@ -234,4 +234,12 @@ export const ENDPOINTS = {
     LOGO: (id) => `/api/quote-profiles/${id}/logo`,
     PAYMENT_QR: (id) => `/api/quote-profiles/${id}/payment-qr`,
   },
+  
+  TICKET: {
+    CREATE: `/api/tickets`,
+    GET_ALL: `/api/tickets`,
+    GET_BY_ID: (id) => `/api/tickets/${id}`,
+    UPDATE_STATUS: (id) => `/api/tickets/${id}/status`,
+    REPLY: (id) => `/api/tickets/${id}/reply`,
+  }
 };

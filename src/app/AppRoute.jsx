@@ -39,6 +39,8 @@ import OfferLetter from "../modules/onboarding/pages/OfferLetter";
 import ClientNdaPage from "../modules/onboarding/pages/ClientNdaPage";
 import MyComplaints from "../modules/complaints/pages/MyComplaints";
 import ManageComplaints from "../modules/complaints/pages/ManageComplaints";
+import MyTickets from "../modules/tickets/pages/MyTickets";
+import ManageTickets from "../modules/tickets/pages/ManageTickets";
 import SubmitPayment from "../modules/payments/pages/SubmitPayment";
 import ManagePayments from "../modules/payments/pages/ManagePayments";
 
@@ -88,6 +90,8 @@ const AppRoute = createBrowserRouter([
             { path: "/my-proposal", element: <MyProposal /> },
             { path: "/my-complaints", element: <MyComplaints /> },
             { path: "/manage-complaints", element: <ManageComplaints /> },
+            { path: "/my-tickets", element: <MyTickets /> },
+            { path: "/manage-tickets", element: <ManageTickets /> },
             { path: "/submit-payment", element: <SubmitPayment /> },
             { path: "/manage-payments", element: <ManagePayments /> },
             { path: "/notifications", element: <Notifications /> },

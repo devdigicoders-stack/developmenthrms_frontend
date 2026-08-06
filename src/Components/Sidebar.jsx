@@ -16,8 +16,8 @@ const NAV = [
             { name: "My Offer Letter", icon: FileText, path: "/offer-letter", permissions: [], hideForAdmin: true, hideForClient: true },
             { name: "My NDA", icon: FileText, path: "/nda", permissions: [], clientOnly: true },
             { name: "My Proposal", icon: FileText, path: "/my-proposal", permissions: [], clientOnly: true },
-            { name: "My Complaints", icon: AlertCircle, path: "/my-complaints", permissions: ["CREATE_COMPLAINT", "VIEW_COMPLAINT"] },
-            { name: "My Tickets", icon: AlertCircle, path: "/my-tickets", permissions: ["RAISE_TICKET", "VIEW_TICKET"] },
+            { name: "My Complaints", icon: AlertCircle, path: "/my-complaints", permissions: ["CREATE_COMPLAINT", "VIEW_COMPLAINT"], hideForSuperAdmin: true },
+            { name: "My Tickets", icon: AlertCircle, path: "/my-tickets", permissions: ["RAISE_TICKET", "VIEW_TICKET"], hideForSuperAdmin: true },
             { name: "Submit Payment", icon: IndianRupee, path: "/submit-payment", permissions: ["SUBMIT_PAYMENT"] }
         ],
     },

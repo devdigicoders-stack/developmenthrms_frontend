@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useStore } from "../../../context/StoreContext";
 import { getTickets, createTicket } from "../services/ticketService";
 import { getProjects } from "../../projects/services/projectService";
@@ -8,6 +8,7 @@ import { Plus, X } from "lucide-react";
 
 const MyTickets = () => {
     const { user } = useStore();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const queryProjectId = searchParams.get("projectId");
 
@@ -31,7 +32,13 @@ const MyTickets = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { 
+        if (user?.role?.name === "super_admin") {
+            navigate("/");
+            return;
+        }
+        loadData(); 
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

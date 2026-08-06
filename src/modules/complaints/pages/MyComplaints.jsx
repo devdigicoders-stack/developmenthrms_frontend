@@ -2,8 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Plus, MessageSquare, AlertCircle, Clock, CheckCircle, XCircle } from "lucide-react";
 import { getMyComplaints, createComplaint } from "../services/complaintService";
 import { toast } from "react-toastify";
+import { useStore } from "../../../context/StoreContext";
+import { useNavigate } from "react-router-dom";
 
 const MyComplaints = () => {
+    const { user } = useStore();
+    const navigate = useNavigate();
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,8 +28,12 @@ const MyComplaints = () => {
     };
 
     useEffect(() => {
+        if (user?.role?.name === "super_admin") {
+            navigate("/");
+            return;
+        }
         fetchComplaints();
-    }, []);
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

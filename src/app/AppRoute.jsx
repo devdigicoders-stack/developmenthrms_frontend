@@ -27,7 +27,7 @@ import Policies from "../modules/policies/pages/Policies";
 import ManagePolicies from "../modules/policies/pages/ManagePolicies";
 import ViewNda from "../modules/nda/pages/ViewNda";
 import ManageNda from "../modules/nda/pages/ManageNda";
-import MyProposal from "../pages/MyProposal";
+import MyProposal from "../Pages/MyProposal";
 
 // Onboarding imports
 import OnboardingLayout from "../layout/OnboardingLayout";

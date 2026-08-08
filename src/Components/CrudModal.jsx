@@ -96,12 +96,12 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="w-full max-w-2xl max-h-[90vh] bg-white rounded-xl shadow-lg flex flex-col animate-scaleIn"
+        className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col animate-scaleIn overflow-hidden"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white">
-          <h2 id="modal-title" className="text-base sm:text-lg font-semibold">
+        <div className="flex justify-between items-center p-5 sm:px-8 sm:py-5 border-b border-gray-100 sticky top-0 bg-gradient-to-r from-slate-50 to-white">
+          <h2 id="modal-title" className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">
             {title}
           </h2>
 
@@ -110,16 +110,16 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
             aria-label="Close modal"
             className="p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <X className="w-5 h-5 text-gray-500 hover:text-red-500" />
+            <X className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-8 min-h-[40vh]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {fields.map((field) => (
             <div key={field.name} className={field.fullWidth ? "sm:col-span-2" : ""}>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 {field.label}
               </label>
 
@@ -130,7 +130,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
                   value={formData[field.name] || ""}
                   onChange={handleChange}
                   disabled={mode === "view"}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block px-4 py-3 transition-all duration-200 shadow-sm hover:bg-white outline-none"
                 >
                   <option value="">Select</option>
                   {field.options?.map((opt) => (
@@ -147,7 +147,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
                     multiple
                     value={formData[field.name] || []}
                     onChange={(e) => handleMultiSelect(e, field.name)}
-                    className="w-full border rounded-lg px-3 py-2 h-28 text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block px-4 py-3 transition-all duration-200 shadow-sm hover:bg-white h-28 outline-none"
                   >
                     {field.options?.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -259,7 +259,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
                           placeholderText="Select date"
                           disabled={mode === "view"}
                           wrapperClassName="w-full"
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200"
+                          className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block px-4 py-3 transition-all duration-200 shadow-sm hover:bg-white outline-none"
                         />
                       </div>
                     ) :
@@ -273,7 +273,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
                             value={formData[field.name] || ""}
                             onChange={handleChange}
                             disabled={mode === "view"}
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200 ${field.type === "password" ? "pr-10" : ""}`}
+                            className={`w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block px-4 py-3 transition-all duration-200 shadow-sm hover:bg-white outline-none ${field.type === "password" ? "pr-10" : ""}`}
                           />
                           {field.type === "password" && (
                             <button
@@ -292,10 +292,10 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 p-4 sm:p-6 border-t sticky bottom-0 bg-white">
+        <div className="flex justify-end gap-3 p-5 sm:px-8 sm:py-5 border-t border-gray-100 sticky bottom-0 bg-slate-50/80 backdrop-blur-sm">
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-2 border rounded-lg text-sm hover:bg-gray-100 focus:ring-2 focus:ring-blue-500"
+            className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-white focus:ring-2 focus:ring-gray-200 transition-all shadow-sm active:scale-95 bg-gray-50"
           >
             Cancel
           </button>
@@ -304,7 +304,7 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
             >
               {loading ? "Saving..." : "Save"}
             </button>

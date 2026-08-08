@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import {
     LayoutDashboard, Users, Building2, FolderKanban, ShieldCheck,
-    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart
+    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart, Monitor, Laptop
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import { authlogout } from "../modules/auth/services/authService";
@@ -18,6 +18,8 @@ const NAV = [
             { name: "My Proposal", icon: FileText, path: "/my-proposal", permissions: [], clientOnly: true },
             { name: "My Complaints", icon: AlertCircle, path: "/my-complaints", permissions: ["CREATE_COMPLAINT", "VIEW_COMPLAINT"], hideForSuperAdmin: true },
             { name: "My Tickets", icon: AlertCircle, path: "/my-tickets", permissions: ["RAISE_TICKET", "VIEW_TICKET"], hideForSuperAdmin: true },
+            { name: "My Assets", icon: Laptop, path: "/my-assets", permissions: [], hideForClient: true },
+            { name: "My Resignation", icon: LogOut, path: "/my-resignation", permissions: [], hideForClient: true },
             { name: "Submit Payment", icon: IndianRupee, path: "/submit-payment", permissions: ["SUBMIT_PAYMENT"] }
         ],
     },
@@ -33,6 +35,7 @@ const NAV = [
             { name: "NDA",         icon: FileText,     path: "/nda",            permissions: ["VIEW_NDA"], hideForClient: true },
             { name: "Manage Complaints", icon: AlertCircle, path: "/manage-complaints", permissions: ["MANAGE_COMPLAINT"] },
             { name: "Manage Tickets", icon: AlertCircle, path: "/manage-tickets", permissions: ["MANAGE_TICKET"] },
+            { name: "Assets",      icon: Monitor,      path: "/assets",         permissions: ["MANAGE_ASSETS"] },
             { name: "Employees",   icon: Users,        path: "/users",          permissions: ["VIEW_USER", "VIEW_ALL_USERS"] },
             { name: "Onboarding Approvals", icon: UserCheck, path: "/onboarding-approvals", permissions: ["APPROVE_ONBOARDING", "MANAGE_USER"] },
             { name: "Manage Payments", icon: IndianRupee, path: "/manage-payments", permissions: ["MANAGE_PAYMENTS"] },
@@ -57,6 +60,7 @@ const NAV = [
             { name: "Assign Leave",     icon: UserCheck,   path: "/leave/assign",      permissions: ["ASSIGN_LEAVE", "BULK_ASSIGN_LEAVE"] },
             { name: "Holidays",         icon: CalendarDays,path: "/leave/holidays",    permissions: ["VIEW_HOLIDAY", "VIEW_ALL_HOLIDAYS"] },
             { name: "Payroll",          icon: IndianRupee, path: "/payroll",           permissions: ["VIEW_PAYROLL", "MANAGE_PAYROLL"] },
+            { name: "Exit Management",  icon: LogOut,      path: "/manage-resignations", permissions: ["MANAGE_RESIGNATIONS"] },
         ],
     },
     {

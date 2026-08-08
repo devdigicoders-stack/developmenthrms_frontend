@@ -15,6 +15,7 @@ import { getMyTaskHistory } from "../modules/projects/services/projectService";
 import { getLeads } from "../modules/leads/services/leadService";
 import { getAllQuotes } from "../modules/leads/services/quoteService";
 import { toast } from "react-toastify";
+import UpcomingEventsWidget from "../modules/dashboard/components/UpcomingEventsWidget";
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -215,7 +216,7 @@ const Home = () => {
 
             {/* Admin / Employee Dashboard Grid */}
             {!isClient && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Check-in Card */}
                 <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
@@ -377,6 +378,11 @@ const Home = () => {
                             )}
                         </div>
                 )}
+                
+                {/* Upcoming Events Widget */}
+                <div className="lg:col-span-1">
+                    <UpcomingEventsWidget />
+                </div>
             </div>
             )}
 

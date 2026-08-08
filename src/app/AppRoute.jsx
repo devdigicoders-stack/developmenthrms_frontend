@@ -47,6 +47,10 @@ import AttendanceReport from "../modules/reports/pages/AttendanceReport";
 import PayrollReport from "../modules/reports/pages/PayrollReport";
 import LeaveReport from "../modules/reports/pages/LeaveReport";
 import EmployeeReport from "../modules/reports/pages/EmployeeReport";
+import Assets from "../modules/assets/pages/Assets";
+import MyAssets from "../modules/assets/pages/MyAssets";
+import MyResignation from "../modules/exit/pages/MyResignation";
+import ManageResignations from "../modules/exit/pages/ManageResignations";
 
 const AppRoute = createBrowserRouter([
     {
@@ -100,6 +104,9 @@ const AppRoute = createBrowserRouter([
             { path: "/manage-complaints", element: <ManageComplaints /> },
             { path: "/my-tickets", element: <MyTickets /> },
             { path: "/manage-tickets", element: <ManageTickets /> },
+            { path: "/my-assets", element: <MyAssets /> },
+            { path: "/my-resignation", element: <MyResignation /> },
+            { path: "/manage-resignations", element: <ManageResignations /> },
             { path: "/submit-payment", element: <SubmitPayment /> },
             { path: "/manage-payments", element: <ManagePayments /> },
             { path: "/notifications", element: <Notifications /> },
@@ -108,6 +115,7 @@ const AppRoute = createBrowserRouter([
             { path: "/settings/companies", element: <Company/> },
             { path: "/settings/user", element: <User/> },
             { path: "/profile", element: <Profile /> },
+            { path: "/assets", element: <Assets /> },
             { path: "*", element: <Home /> }
         ]
     },

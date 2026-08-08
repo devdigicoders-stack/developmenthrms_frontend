@@ -18,6 +18,7 @@ export const ENDPOINTS = {
     DELETE_USER: (id) => `/api/user/${id}`,
     TOGGLE_STATUS: (id) => `/api/user/${id}/toggle-status`,
     ADMIN_CHANGE_PASSWORD: (id) => `/api/user/${id}/change-password`,
+    UPCOMING_EVENTS: `/api/user/upcoming-events`,
   },
 
   COMPANY: {

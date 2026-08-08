@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import {
     LayoutDashboard, Users, Building2, FolderKanban, ShieldCheck,
-    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle
+    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import { authlogout } from "../modules/auth/services/authService";
@@ -57,6 +57,15 @@ const NAV = [
             { name: "Assign Leave",     icon: UserCheck,   path: "/leave/assign",      permissions: ["ASSIGN_LEAVE", "BULK_ASSIGN_LEAVE"] },
             { name: "Holidays",         icon: CalendarDays,path: "/leave/holidays",    permissions: ["VIEW_HOLIDAY", "VIEW_ALL_HOLIDAYS"] },
             { name: "Payroll",          icon: IndianRupee, path: "/payroll",           permissions: ["VIEW_PAYROLL", "MANAGE_PAYROLL"] },
+        ],
+    },
+    {
+        group: "Reports",
+        items: [
+            { name: "Attendance Report", icon: CalendarDays, path: "/reports/attendance", permissions: ["VIEW_ALL_ATTENDANCES", "VIEW_TEAM_ATTENDANCE"] },
+            { name: "Leave Report", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
+            { name: "Payroll Report", icon: IndianRupee, path: "/reports/payroll", permissions: ["VIEW_PAYROLL"] },
+            { name: "Employee Report", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
         ],
     },
 ];

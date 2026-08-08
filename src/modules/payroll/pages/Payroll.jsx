@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
 import DefineSalary from "./DefineSalary";
 import PayslipPrint from "./PayslipPrint";
@@ -241,7 +242,12 @@ const AdminPayroll = ({ can, company }) => {
             setGenerating(true);
             const res = await generatePayroll({ month });
             if (res.generated === 0) {
-                toast.warn(res.message || "No payroll generated. Check salary structures are defined for employees.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Payroll Skipped',
+                    text: res.message || "No payroll generated. Check salary structures are defined for employees.",
+                    confirmButtonColor: '#3085d6',
+                });
             } else {
                 toast.success(res.message || "Payroll generated");
             }
@@ -264,19 +270,43 @@ const AdminPayroll = ({ can, company }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete this draft payroll?")) return;
+        const result = await Swal.fire({
+            title: "Delete this draft payroll?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+        if (!result.isConfirmed) return;
         try { await deletePayrollRun(id); toast.success("Deleted"); load(); }
         catch (e) { toast.error(e?.response?.data?.message || "Failed"); }
     };
 
     const handleBulkApprove = async () => {
-        if (!window.confirm(`Approve all draft payrolls for ${month}?`)) return;
+        const result = await Swal.fire({
+            title: `Approve all draft payrolls for ${month}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve all"
+        });
+        if (!result.isConfirmed) return;
         try { const r = await bulkApprovePayroll(month); toast.success(r.message); load(); }
         catch (e) { toast.error(e?.response?.data?.message || "Failed"); }
     };
 
     const handleBulkPaid = async () => {
-        if (!window.confirm(`Mark all approved payrolls as paid for ${month}?`)) return;
+        const result = await Swal.fire({
+            title: `Mark all approved payrolls as paid for ${month}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, mark as paid"
+        });
+        if (!result.isConfirmed) return;
         try { const r = await bulkMarkPaid(month); toast.success(r.message); load(); }
         catch (e) { toast.error(e?.response?.data?.message || "Failed"); }
     };
@@ -458,6 +488,8 @@ const MyPayslips = ({ company }) => {
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Month</th>
+                            <th className="px-4 py-3 text-center">Work Days</th>
+                            <th className="px-4 py-3 text-center">LOP</th>
                             <th className="px-4 py-3 text-right">Gross</th>
                             <th className="px-4 py-3 text-right">Deductions</th>
                             <th className="px-4 py-3 text-right">Net Salary</th>
@@ -467,10 +499,10 @@ const MyPayslips = ({ company }) => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400">Loading...</td></tr>
+                            <tr><td colSpan={8} className="px-4 py-12 text-center text-gray-400">Loading...</td></tr>
                         ) : runs.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-14 text-center">
+                                <td colSpan={8} className="px-4 py-14 text-center">
                                     <IndianRupee size={36} className="mx-auto text-gray-300 mb-2" />
                                     <p className="text-gray-400 text-sm">No payslips available yet.</p>
                                 </td>
@@ -478,6 +510,10 @@ const MyPayslips = ({ company }) => {
                         ) : runs.map(run => (
                             <tr key={run._id} className="hover:bg-gray-50 transition">
                                 <td className="px-4 py-3 font-medium text-gray-800">{run.month}</td>
+                                <td className="px-4 py-3 text-center text-gray-600">
+                                    <span title="Present / Total">{run.presentDays} / {run.totalWorkingDays}</span>
+                                </td>
+                                <td className="px-4 py-3 text-center text-red-500 font-medium">{run.lopDays}</td>
                                 <td className="px-4 py-3 text-right text-gray-700">{fmt(run.grossEarnings)}</td>
                                 <td className="px-4 py-3 text-right text-red-500">- {fmt(run.totalDeductions)}</td>
                                 <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt(run.netSalary)}</td>

@@ -22,12 +22,14 @@ const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit",
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 const fmtHours = (h) => {
     if (!h && h !== 0) return "—";
-    const totalMins = Math.round(h * 60);
+    const sign = h < 0 ? "-" : "";
+    const absH = Math.abs(h);
+    const totalMins = Math.round(absH * 60);
     const hh = Math.floor(totalMins / 60);
     const mm = totalMins % 60;
-    if (hh === 0) return `${mm}m`;
-    if (mm === 0) return `${hh}h`;
-    return `${hh}h ${mm}m`;
+    if (hh === 0) return `${sign}${mm}m`;
+    if (mm === 0) return `${sign}${hh}h`;
+    return `${sign}${hh}h ${mm}m`;
 };
 
 const STATUS = {
@@ -70,6 +72,7 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
 // ── Calendar ──────────────────────────────────────────────────────────────────
 const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonthChange }) => {
     const [selected, setSelected] = useState(null);
+    const [viewMode, setViewMode] = useState("calendar");
 
     const [year, mon] = month.split("-").map(Number);
     const firstDay = new Date(year, mon - 1, 1).getDay();
@@ -114,9 +117,18 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
         : null;
 
     return (
-        <div className="flex flex-col lg:flex-row gap-5">
-            {/* ── Calendar grid ── */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm w-full lg:max-w-md xl:max-w-lg shrink-0">
+        <div className="space-y-4">
+            <div className="flex justify-end">
+                <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+                    <button onClick={() => setViewMode("calendar")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "calendar" ? "bg-white shadow text-gray-800" : "text-gray-500 hover:text-gray-700"}`}>Calendar View</button>
+                    <button onClick={() => setViewMode("list")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list" ? "bg-white shadow text-gray-800" : "text-gray-500 hover:text-gray-700"}`}>Table View</button>
+                </div>
+            </div>
+
+            {viewMode === "calendar" ? (
+            <div className="flex flex-col lg:flex-row gap-5">
+                {/* ── Calendar grid ── */}
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm w-full lg:max-w-md xl:max-w-lg shrink-0">
                 {/* Month nav */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
@@ -352,6 +364,25 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                             </p>
                                         )}
                                     </div>
+                                    
+                                    {/* EXTRA TIME BLACK TAB */}
+                                    {(() => {
+                                        let extraHours = 0;
+                                        if (selectedRecord.workHours > 0 && selectedRecord.workShiftId?.startTime && selectedRecord.workShiftId?.endTime) {
+                                            const [sH, sM] = selectedRecord.workShiftId.startTime.split(':').map(Number);
+                                            const [eH, eM] = selectedRecord.workShiftId.endTime.split(':').map(Number);
+                                            const reqH = (eH + eM/60) - (sH + sM/60);
+                                            extraHours = selectedRecord.workHours - reqH;
+                                        }
+                                        return (
+                                            <div className="bg-gray-900 rounded-xl p-4 col-span-2 shadow-md border border-gray-800">
+                                                <p className="text-xs text-gray-400 mb-1">Extra Time (Overtime)</p>
+                                                <p className="text-lg font-bold text-white">
+                                                    {extraHours > 0 ? fmtHours(extraHours) : "0m"}
+                                                </p>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {selectedRecord.checkInLocation?.latitude && (
@@ -386,6 +417,62 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                     </div>
                 )}
             </div>
+            </div>
+            ) : (
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50">
+                        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition"><ChevronLeft size={18} /></button>
+                        <h3 className="font-semibold text-gray-800 text-base">{monthLabel}</h3>
+                        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition"><ChevronRight size={18} /></button>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                <tr>
+                                    <th className="px-5 py-3 font-medium">Date</th>
+                                    <th className="px-5 py-3 font-medium">Status</th>
+                                    <th className="px-5 py-3 font-medium">Check In</th>
+                                    <th className="px-5 py-3 font-medium">Check Out</th>
+                                    <th className="px-5 py-3 font-medium">Work Hours</th>
+                                    <th className="px-5 py-3 font-medium">Extra Time</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {records.length === 0 ? (
+                                    <tr><td colSpan="6" className="px-5 py-8 text-center text-gray-400">No attendance data found for this month</td></tr>
+                                ) : (
+                                    records.sort((a,b) => a.date.localeCompare(b.date)).map(r => {
+                                        let extraHours = 0;
+                                        if (r.workHours > 0 && r.workShiftId?.startTime && r.workShiftId?.endTime) {
+                                            const [sH, sM] = r.workShiftId.startTime.split(':').map(Number);
+                                            const [eH, eM] = r.workShiftId.endTime.split(':').map(Number);
+                                            const reqH = (eH + eM/60) - (sH + sM/60);
+                                            extraHours = r.workHours - reqH;
+                                        }
+                                        const s = STATUS[r.status] || { cls: "bg-gray-50 text-gray-600", label: r.status };
+                                        return (
+                                            <tr key={r._id} className="hover:bg-gray-50 transition">
+                                                <td className="px-5 py-3">{fmtDate(r.date)}</td>
+                                                <td className="px-5 py-3">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${s.cls}`}>{s.label}</span>
+                                                </td>
+                                                <td className="px-5 py-3 font-medium text-green-600">{fmt(r.checkIn) || "—"}</td>
+                                                <td className="px-5 py-3 font-medium text-red-500">{fmt(r.checkOut) || "—"}</td>
+                                                <td className="px-5 py-3 font-medium text-blue-600">{fmtHours(r.workHours)}</td>
+                                                <td className="px-5 py-3 font-medium">
+                                                    {extraHours > 0 ? (
+                                                        <span className="bg-gray-900 text-white px-2 py-1 rounded text-xs shadow">{fmtHours(extraHours)}</span>
+                                                    ) : <span className="text-gray-400">0m</span>}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -699,8 +786,8 @@ const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
 const Attendance = () => {
     const { user } = useStore();
     const isSuperAdmin = user?.role?.name === "super_admin";
-    const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
     const permissions = user?.role?.permissions || [];
+    const isAdmin = user?.role?.name === "admin" || isSuperAdmin || permissions.includes("VIEW_ALL_ATTENDANCES");
     const [hasDirectReports, setHasDirectReports] = useState(false);
     const showTeamTab = isAdmin || hasDirectReports;
 
@@ -871,7 +958,7 @@ const Attendance = () => {
     }, [isAdmin, showTeamTab, month]);
 
     useEffect(() => { loadToday(); loadSummary(); loadMyRecords(); loadHolidays(); loadMyLeaves(); }, [loadToday, loadSummary, loadMyRecords, loadHolidays, loadMyLeaves]);
-    useEffect(() => { if (tab === "team") loadCompanyRecords(); }, [tab, loadCompanyRecords]);
+    useEffect(() => { if (tab === "team" || tab === "report") loadCompanyRecords(); }, [tab, loadCompanyRecords]);
 
     const doCheckIn = async () => {
         if (!location) return toast.error("Location unavailable. Please refresh location.");
@@ -1280,16 +1367,19 @@ const Attendance = () => {
                 const byEmp = {};
                 companyRecords.forEach(r => {
                     const id = r.userId?._id; if (!id) return;
-                    if (!byEmp[id]) byEmp[id] = { user: r.userId, late:0, early:0, absent:0, total:0 };
+                    if (!byEmp[id]) byEmp[id] = { user: r.userId, present:0, late:0, half:0, early:0, absent:0, total:0, totalHours: 0 };
                     byEmp[id].total++;
+                    byEmp[id].totalHours += (r.workHours || 0);
+                    if (r.status==="present" || r.status==="regularized") byEmp[id].present++;
                     if (r.status==="late") byEmp[id].late++;
+                    if (r.status==="half-day") byEmp[id].half++;
                     if (r.status==="early-leave") byEmp[id].early++;
                     if (r.status==="absent") byEmp[id].absent++;
                 });
                 const empStats = Object.values(byEmp).sort((a,b)=>(b.late+b.early+b.absent)-(a.late+a.early+a.absent));
                 const handleExportReport = () => {
-                    const headers = ["Employee","Code","Late Days","Early Leave","Absent Days","Total Records"];
-                    const rows = empStats.map(e => [`${e.user?.firstName} ${e.user?.lastName}`,e.user?.employeeCode||"",e.late,e.early,e.absent,e.total]);
+                    const headers = ["Employee","Code","Present","Half Day","Late Days","Early Leave","Absent Days","Total Records","Total Hours"];
+                    const rows = empStats.map(e => [`${e.user?.firstName} ${e.user?.lastName}`,e.user?.employeeCode||"",e.present,e.half,e.late,e.early,e.absent,e.total,fmtHours(e.totalHours)]);
                     exportToCSV([headers,...rows],`attendance_report_${month}.csv`);
                 };
                 return (
@@ -1299,9 +1389,13 @@ const Attendance = () => {
                                 <h2 className="text-base font-semibold text-gray-800">Attendance Report &mdash; {month}</h2>
                                 <p className="text-xs text-gray-400 mt-0.5">Late arrivals, early departures and absences per employee</p>
                             </div>
-                            <button onClick={handleExportReport} className="flex items-center gap-1.5 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-xs font-medium transition">
-                                <Download size={13} /> Export CSV
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+                                    className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                                <button onClick={handleExportReport} className="flex items-center gap-1.5 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-xs font-medium transition">
+                                    <Download size={13} /> Export CSV
+                                </button>
+                            </div>
                         </div>
                         <div className="grid grid-cols-3 gap-3 mb-5">
                             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center"><p className="text-2xl font-bold text-yellow-700">{lateRecs.length}</p><p className="text-xs text-yellow-600 mt-1">Late Arrivals</p></div>
@@ -1312,14 +1406,17 @@ const Attendance = () => {
                             <table className="w-full text-sm">
                                 <thead><tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                                     <th className="px-4 py-3 text-left">Employee</th>
+                                    <th className="px-4 py-3 text-center">Present</th>
+                                    <th className="px-4 py-3 text-center">Half Day</th>
                                     <th className="px-4 py-3 text-center">Late</th>
                                     <th className="px-4 py-3 text-center">Early Leave</th>
                                     <th className="px-4 py-3 text-center">Absent</th>
                                     <th className="px-4 py-3 text-center">Total Days</th>
+                                    <th className="px-4 py-3 text-center">Total Hours</th>
                                 </tr></thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {empStats.length === 0 ? (
-                                        <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">No data for this month.</td></tr>
+                                        <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No data for this month.</td></tr>
                                     ) : empStats.map(e => (
                                         <tr key={e.user?._id} className="hover:bg-gray-50 transition">
                                             <td className="px-4 py-3">
@@ -1330,10 +1427,13 @@ const Attendance = () => {
                                                     <div><p className="font-medium text-gray-800">{e.user?.firstName} {e.user?.lastName}</p><p className="text-xs text-gray-400">{e.user?.employeeCode}</p></div>
                                                 </div>
                                             </td>
+                                            <td className="px-4 py-3 text-center"><span className={e.present>0?"text-green-600 font-semibold":"text-gray-400"}>{e.present}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.half>0?"text-orange-500 font-semibold":"text-gray-400"}>{e.half}</span></td>
                                             <td className="px-4 py-3 text-center"><span className={e.late>0?"text-yellow-600 font-semibold":"text-gray-400"}>{e.late}</span></td>
                                             <td className="px-4 py-3 text-center"><span className={e.early>0?"text-purple-600 font-semibold":"text-gray-400"}>{e.early}</span></td>
                                             <td className="px-4 py-3 text-center"><span className={e.absent>0?"text-red-500 font-semibold":"text-gray-400"}>{e.absent}</span></td>
                                             <td className="px-4 py-3 text-center text-gray-600">{e.total}</td>
+                                            <td className="px-4 py-3 text-center text-gray-900 font-medium">{fmtHours(e.totalHours)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

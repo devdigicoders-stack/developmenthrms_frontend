@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Pencil, Trash2, X, CalendarDays, Upload, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, X, CalendarDays, Upload, FileText, LayoutList, Calendar } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
@@ -167,6 +167,74 @@ const BulkModal = ({ isOpen, onClose, onSubmit, onCsvSubmit, loading }) => {
     );
 };
 
+// ── Yearly Calendar Component ──────────────────────────────────────────────────
+const YearlyCalendar = ({ year, holidays }) => {
+    const months = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(year, i, 1);
+        return {
+            name: date.toLocaleString('default', { month: 'long' }),
+            monthIndex: i,
+            daysInMonth: new Date(year, i + 1, 0).getDate(),
+            startDay: date.getDay()
+        };
+    });
+
+    const getHoliday = (day, monthIndex) => {
+        const dStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        return holidays.find(h => h.date === dStr);
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {months.map(m => (
+                <div key={m.name} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3 text-center">{m.name} {year}</h3>
+                    <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                            <div key={d} className="text-[10px] font-semibold text-gray-400 uppercase">{d}</div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center">
+                        {Array.from({ length: m.startDay }).map((_, i) => (
+                            <div key={`empty-${i}`} className="p-1" />
+                        ))}
+                        {Array.from({ length: m.daysInMonth }, (_, i) => i + 1).map(day => {
+                            const h = getHoliday(day, m.monthIndex);
+                            const isToday = new Date().toDateString() === new Date(year, m.monthIndex, day).toDateString();
+                            
+                            let classes = "w-7 h-7 mx-auto flex items-center justify-center rounded-full text-xs font-medium transition-all ";
+                            
+                            if (h) {
+                                if (h.type === 'national') classes += "bg-blue-100 text-blue-700 font-bold ring-1 ring-blue-300 cursor-pointer hover:bg-blue-200 ";
+                                else if (h.type === 'optional') classes += "bg-green-100 text-green-700 font-bold ring-1 ring-green-300 cursor-pointer hover:bg-green-200 ";
+                                else if (h.type === 'restricted') classes += "bg-orange-100 text-orange-700 font-bold ring-1 ring-orange-300 cursor-pointer hover:bg-orange-200 ";
+                                else classes += "bg-gray-100 text-gray-800 font-bold ring-1 ring-gray-300 cursor-pointer hover:bg-gray-200 ";
+                            } else {
+                                classes += isToday ? "bg-gray-900 text-white font-bold shadow-md " : "text-gray-600 hover:bg-gray-100 ";
+                            }
+
+                            return (
+                                <div key={day} className="relative group">
+                                    <div className={classes}>{day}</div>
+                                    {h && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-max max-w-[150px] z-10">
+                                            <div className="bg-gray-900 text-white text-[10px] rounded px-2 py-1 shadow-xl leading-tight">
+                                                <p className="font-bold">{h.name}</p>
+                                                <p className="opacity-80 capitalize">{h.type}</p>
+                                            </div>
+                                            <div className="w-2 h-2 bg-gray-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 // ── Main Holiday Page ──────────────────────────────────────────────────────────
 const Holiday = () => {
     const { user } = useStore();
@@ -182,6 +250,7 @@ const Holiday = () => {
     const [bulkOpen, setBulkOpen]     = useState(false);
     const [selected, setSelected]     = useState(null);
     const [filterType, setFilterType] = useState("all");
+    const [viewMode, setViewMode]     = useState("calendar");
 
     const load = async () => {
         try {
@@ -269,7 +338,11 @@ const Holiday = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Holidays</h1>
                     <p className="text-sm text-gray-500 mt-0.5">{canManage ? "Manage company holidays for the year" : "View upcoming company holidays"}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center bg-gray-200/60 p-1 rounded-lg">
+                        <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition flex items-center justify-center ${viewMode === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-800"}`} title="List View"><LayoutList size={15} /></button>
+                        <button onClick={() => setViewMode("calendar")} className={`p-1.5 rounded-md transition flex items-center justify-center ${viewMode === "calendar" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-800"}`} title="Calendar View"><Calendar size={15} /></button>
+                    </div>
                     <input type="number" value={year} onChange={e => setYear(Number(e.target.value))}
                         className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     {canManage && (
@@ -298,75 +371,79 @@ const Holiday = () => {
                 ))}
             </div>
 
-            {/* Table */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                            <th className="px-4 py-3 text-left">Holiday</th>
-                            <th className="px-4 py-3 text-left">Date</th>
-                            <th className="px-4 py-3 text-left">Day</th>
-                            <th className="px-4 py-3 text-left">Type</th>
-                            <th className="px-4 py-3 text-left">Description</th>
-                            {(can("UPDATE_HOLIDAY") || can("DELETE_HOLIDAY")) && (
-                                <th className="px-4 py-3 text-center">Actions</th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filtered.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="px-4 py-12 text-center">
-                                    <CalendarDays size={36} className="mx-auto text-gray-300 mb-2" />
-                                    <p className="text-gray-400 text-sm">No holidays found for {year}</p>
-                                </td>
+            {/* Table or Calendar View */}
+            {viewMode === "calendar" ? (
+                <YearlyCalendar year={year} holidays={filtered} />
+            ) : (
+                <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                                <th className="px-4 py-3 text-left">Holiday</th>
+                                <th className="px-4 py-3 text-left">Date</th>
+                                <th className="px-4 py-3 text-left">Day</th>
+                                <th className="px-4 py-3 text-left">Type</th>
+                                <th className="px-4 py-3 text-left">Description</th>
+                                {(can("UPDATE_HOLIDAY") || can("DELETE_HOLIDAY")) && (
+                                    <th className="px-4 py-3 text-center">Actions</th>
+                                )}
                             </tr>
-                        ) : filtered.map(h => {
-                            const d = new Date(h.date + "T00:00:00");
-                            const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
-                            const dateStr = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-                            return (
-                                <tr key={h._id} className="hover:bg-gray-50 transition">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                                                <CalendarDays size={15} />
-                                            </div>
-                                            <span className="font-medium text-gray-800">{h.name}</span>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-12 text-center">
+                                        <CalendarDays size={36} className="mx-auto text-gray-300 mb-2" />
+                                        <p className="text-gray-400 text-sm">No holidays found for {year}</p>
                                     </td>
-                                    <td className="px-4 py-3 text-gray-600">{dateStr}</td>
-                                    <td className="px-4 py-3 text-gray-500">{dayName}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium border capitalize ${TYPE_COLORS[h.type] || "bg-gray-50 text-gray-600 border-gray-200"}`}>
-                                            {h.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">{h.description || "—"}</td>
-                                    {(can("UPDATE_HOLIDAY") || can("DELETE_HOLIDAY")) && (
+                                </tr>
+                            ) : filtered.map(h => {
+                                const d = new Date(h.date + "T00:00:00");
+                                const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
+                                const dateStr = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                                return (
+                                    <tr key={h._id} className="hover:bg-gray-50 transition">
                                         <td className="px-4 py-3">
-                                            <div className="flex items-center justify-center gap-2">
-                                                {can("UPDATE_HOLIDAY") && (
-                                                    <button onClick={() => { setSelected(h); setDrawerOpen(true); }}
-                                                        className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition">
-                                                        <Pencil size={14} />
-                                                    </button>
-                                                )}
-                                                {can("DELETE_HOLIDAY") && (
-                                                    <button onClick={() => handleDelete(h._id)}
-                                                        className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition">
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                                    <CalendarDays size={15} />
+                                                </div>
+                                                <span className="font-medium text-gray-800">{h.name}</span>
                                             </div>
                                         </td>
-                                    )}
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                        <td className="px-4 py-3 text-gray-600">{dateStr}</td>
+                                        <td className="px-4 py-3 text-gray-500">{dayName}</td>
+                                        <td className="px-4 py-3">
+                                            <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium border capitalize ${TYPE_COLORS[h.type] || "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                                                {h.type}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">{h.description || "—"}</td>
+                                        {(can("UPDATE_HOLIDAY") || can("DELETE_HOLIDAY")) && (
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {can("UPDATE_HOLIDAY") && (
+                                                        <button onClick={() => { setSelected(h); setDrawerOpen(true); }}
+                                                            className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition">
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                    )}
+                                                    {can("DELETE_HOLIDAY") && (
+                                                        <button onClick={() => handleDelete(h._id)}
+                                                            className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             <HolidayDrawer
                 isOpen={drawerOpen}

@@ -43,6 +43,10 @@ import MyTickets from "../modules/tickets/pages/MyTickets";
 import ManageTickets from "../modules/tickets/pages/ManageTickets";
 import SubmitPayment from "../modules/payments/pages/SubmitPayment";
 import ManagePayments from "../modules/payments/pages/ManagePayments";
+import AttendanceReport from "../modules/reports/pages/AttendanceReport";
+import PayrollReport from "../modules/reports/pages/PayrollReport";
+import LeaveReport from "../modules/reports/pages/LeaveReport";
+import EmployeeReport from "../modules/reports/pages/EmployeeReport";
 
 const AppRoute = createBrowserRouter([
     {
@@ -69,8 +73,12 @@ const AppRoute = createBrowserRouter([
             { path: "/offer-letter", element: <OfferLetter /> },
             { path: "/users", element: <User/> },
             {path:"/companies", element: <Company/>},
-            {path:"/departments", element: <Department/>},
+            { path: "/departments", element: <Department/> },
             { path: "/attendance", element: <Attendance /> },
+            { path: "/reports/attendance", element: <AttendanceReport /> },
+            { path: "/reports/payroll", element: <PayrollReport /> },
+            { path: "/reports/leave", element: <LeaveReport /> },
+            { path: "/reports/employees", element: <EmployeeReport /> },
             { path: "/work-shifts", element: <WorkShift /> },
             { path: "/employment-status", element: <EmploymentStatus /> },
             { path: "/leave-management",  element: <LeaveManagement /> },

@@ -210,6 +210,13 @@ export const ENDPOINTS = {
     FIELD_CONFIG: `/api/leads/field-config`,
   },
 
+  MEETING: {
+    CREATE: `/api/meetings`,
+    BY_LEAD: (leadId) => `/api/meetings/lead/${leadId}`,
+    UPDATE: (id) => `/api/meetings/${id}`,
+    DELETE: (id) => `/api/meetings/${id}`,
+  },
+
   QUOTE: {
     CREATE: `/api/quotes`,
     GET_ALL: `/api/quotes`,
@@ -242,5 +249,13 @@ export const ENDPOINTS = {
     GET_BY_ID: (id) => `/api/tickets/${id}`,
     UPDATE_STATUS: (id) => `/api/tickets/${id}/status`,
     REPLY: (id) => `/api/tickets/${id}/reply`,
+  },
+
+  REPORTS: {
+    SALES: `/api/reports/sales`
+  },
+  
+  PERFORMANCE: {
+    GET: `/api/performance`
   }
 };

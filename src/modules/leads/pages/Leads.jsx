@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import { fetchUsers } from "../../employee/services/UserService.jsx";
@@ -10,6 +10,7 @@ import LeadImport from "../components/LeadImport.jsx";
 import LeadFieldManager from "../components/LeadFieldManager.jsx";
 import QuoteForm from "../components/QuoteForm.jsx";
 import QuotePreview from "../components/QuotePreview.jsx";
+import LeadMeetings from "../components/LeadMeetings.jsx";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmtUS = (raw = "") => {
@@ -454,6 +455,7 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                 <div className="px-6 pt-5 border-b flex gap-4 overflow-x-auto shrink-0">
                                     {[
                                         { key: "communication", label: "Communication" },
+                                        { key: "meetings",      label: "Meetings", icon: Calendar },
                                         { key: "quotes",        label: "Quotes",  icon: FileText },
                                         { key: "history",       label: "History" },
                                     ].map(({ key, label, icon: Icon }) => (
@@ -481,6 +483,11 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                                 />
                                             </div>
                                         </>
+                                    )}
+                                    {rightTabActive === "meetings" && (
+                                        <div className="px-6 py-5">
+                                            <LeadMeetings leadId={activeLeadId} />
+                                        </div>
                                     )}
                                     {rightTabActive === "quotes" && (
                                         <div className="px-6 py-5 min-h-[400px]">

@@ -47,6 +47,8 @@ import AttendanceReport from "../modules/reports/pages/AttendanceReport";
 import PayrollReport from "../modules/reports/pages/PayrollReport";
 import LeaveReport from "../modules/reports/pages/LeaveReport";
 import EmployeeReport from "../modules/reports/pages/EmployeeReport";
+import SalesReport from "../modules/reports/pages/SalesReport";
+import PerformanceReport from "../modules/reports/pages/PerformanceReport";
 import Assets from "../modules/assets/pages/Assets";
 import MyAssets from "../modules/assets/pages/MyAssets";
 import MyResignation from "../modules/exit/pages/MyResignation";
@@ -83,6 +85,8 @@ const AppRoute = createBrowserRouter([
             { path: "/reports/payroll", element: <PayrollReport /> },
             { path: "/reports/leave", element: <LeaveReport /> },
             { path: "/reports/employees", element: <EmployeeReport /> },
+            { path: "/reports/sales", element: <SalesReport /> },
+            { path: "/reports/performance", element: <PerformanceReport /> },
             { path: "/work-shifts", element: <WorkShift /> },
             { path: "/employment-status", element: <EmploymentStatus /> },
             { path: "/leave-management",  element: <LeaveManagement /> },

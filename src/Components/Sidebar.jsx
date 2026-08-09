@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useStore } from "../context/StoreContext";
 import {
     LayoutDashboard, Users, Building2, FolderKanban, ShieldCheck,
-    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart, Monitor, Laptop
+    Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart, Monitor, Laptop, BarChart2
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import { authlogout } from "../modules/auth/services/authService";
@@ -70,6 +70,8 @@ const NAV = [
             { name: "Leave Report", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
             { name: "Payroll Report", icon: IndianRupee, path: "/reports/payroll", permissions: ["VIEW_PAYROLL"] },
             { name: "Employee Report", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
+            { name: "Sales Report", icon: TrendingUp, path: "/reports/sales", permissions: ["VIEW_SALES_REPORTS"] },
+            { name: "Developer Performance", icon: BarChart2, path: "/reports/performance", permissions: [] },
         ],
     },
 ];

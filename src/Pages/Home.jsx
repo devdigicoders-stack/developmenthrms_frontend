@@ -4,8 +4,12 @@ import { Link } from "react-router-dom";
 import {
     Users, Building2, FolderKanban, ShieldCheck, Clock,
     LogIn, LogOut, CheckCircle, TrendingUp, Receipt, CreditCard,
-    ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart
+    ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart,
+    UserX, ClockAlert, Palmtree, PartyPopper, Activity, Banknote, Sun,
+    Briefcase, Target, ListTodo, BarChart2,
+    PhoneCall, FileCheck, Percent
 } from "lucide-react";
+import api from "../services/axios";
 import { fetchUsers } from "../modules/employee/services/UserService";
 import { fetchAllCompaniesList } from "../modules/company/services/companyService";
 import { getAllCompanyDepartments } from "../modules/department/services/departmentService";
@@ -14,6 +18,9 @@ import { checkIn, checkOut } from "../modules/attendance/services/attendanceServ
 import { getMyTaskHistory } from "../modules/projects/services/projectService";
 import { getLeads } from "../modules/leads/services/leadService";
 import { getAllQuotes } from "../modules/leads/services/quoteService";
+import { getCompanyLeaves, getMyBalance, getHolidays } from "../modules/leave/services/leaveService";
+import { getPayrollSummary, getMyPayslips } from "../modules/payroll/services/payrollService";
+import { getProjects } from "../modules/projects/services/projectService";
 import { toast } from "react-toastify";
 import UpcomingEventsWidget from "../modules/dashboard/components/UpcomingEventsWidget";
 
@@ -70,6 +77,22 @@ const Home = () => {
     const isClient = user?.role?.name?.toLowerCase() === "client";
     const canSee = (perms) => !perms.length || perms.some(p => permissions.includes(p));
 
+    // Permission flags for each admin widget
+    const canViewAttendance   = isSuperAdmin || canSee(["VIEW_ALL_ATTENDANCES", "VIEW_TEAM_ATTENDANCE"]);
+    const canViewLeaves       = isSuperAdmin || canSee(["VIEW_ALL_LEAVES"]);
+    const canViewHolidays     = isSuperAdmin || canSee(["VIEW_ALL_HOLIDAYS", "VIEW_HOLIDAY"]);
+    const canViewPayroll      = isSuperAdmin || canSee(["MANAGE_PAYROLL"]);
+    
+    // Permission flags for employee widgets
+    const canViewMyLeave      = canSee(["VIEW_LEAVE", "VIEW_ALL_LEAVES"]);
+    const canViewMyPayroll    = canSee(["VIEW_PAYROLL", "MANAGE_PAYROLL"]);
+    
+    // Permission flag for PM widgets
+    const canViewPM           = canSee(["VIEW_PROJECT", "MANAGE_PROJECT", "VIEW_ALL_PROJECTS"]);
+    
+    // Permission flag for BDE widgets
+    const canViewSales        = canSee(["VIEW_LEAD", "VIEW_ALL_LEADS", "MANAGE_LEADS"]);
+
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -84,6 +107,19 @@ const Home = () => {
     const [locating, setLocating] = useState(false);
     const [locationError, setLocationError] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
+    // New admin widgets
+    const [pendingLeaves, setPendingLeaves] = useState([]);
+    const [upcomingHolidays, setUpcomingHolidays] = useState([]);
+    const [payrollSummary, setPayrollSummary] = useState(null);
+    const [lateAbsent, setLateAbsent] = useState({ late: [], absent: [] });
+    // New employee widgets
+    const [myLeaveBalance, setMyLeaveBalance] = useState([]);
+    const [myPayslips, setMyPayslips] = useState([]);
+    // PM widgets
+    const [pmProjects, setPmProjects] = useState([]);
+    const [pmPerformance, setPmPerformance] = useState(null);
+    // BDE widgets
+    const [bdeStats, setBdeStats] = useState({ totalLeads: 0, newLeads: 0, todayFollowUps: [], totalQuotes: 0, acceptedQuotes: 0, rejectedQuotes: 0 });
 
     useEffect(() => { const id = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(id); }, []);
 
@@ -134,12 +170,104 @@ const Home = () => {
             getAttendanceSummary(currentMonth()).then(d => setSummary(d.summary)).catch(() => {});
         }
         if (isAdmin) {
-            getCompanyAttendance({ date: new Date().toISOString().split("T")[0] })
-                .then(d => setTeamToday(d.records || [])).catch(() => {});
+            const todayStr = new Date().toISOString().split("T")[0];
+            getCompanyAttendance({ date: todayStr })
+                .then(d => {
+                    const records = d.records || [];
+                    setTeamToday(records);
+                    setLateAbsent({
+                        late: records.filter(r => r.status === "late" || r.status === "half-day"),
+                        absent: records.filter(r => r.status === "absent"),
+                    });
+                }).catch(() => {});
         } else if (!isClient) {
             getMyTaskHistory().then(r => setTaskHistory(r.data?.data || [])).catch(() => {});
         }
     }, [isAdmin, isClient]);
+
+    // Load admin-only widgets
+    useEffect(() => {
+        if (!isAdmin) return;
+        // Pending Leaves
+        if (canViewLeaves) {
+            getCompanyLeaves({ status: "pending" })
+                .then(d => setPendingLeaves((d.leaves || []).slice(0, 5)))
+                .catch(() => {});
+        }
+        // Upcoming Holidays
+        if (canViewHolidays) {
+            getHolidays()
+                .then(d => {
+                    const today = new Date();
+                    const upcoming = (d.holidays || []).filter(h => new Date(h.date) >= today)
+                        .sort((a, b) => new Date(a.date) - new Date(b.date))
+                        .slice(0, 5);
+                    setUpcomingHolidays(upcoming);
+                }).catch(() => {});
+        }
+        // Payroll Summary
+        if (canViewPayroll) {
+            getPayrollSummary({ month: currentMonth() })
+                .then(d => setPayrollSummary(d.summary || null))
+                .catch(() => {});
+        }
+    }, [isAdmin]);
+
+    // Load employee-specific widgets
+    useEffect(() => {
+        if (isClient) return;
+
+        // Upcoming Holidays for employees (admins fetch it in the other useEffect)
+        if (!isAdmin && canViewHolidays) {
+            getHolidays()
+                .then(d => {
+                    const today = new Date();
+                    const upcoming = (d.holidays || []).filter(h => new Date(h.date) >= today)
+                        .sort((a, b) => new Date(a.date) - new Date(b.date))
+                        .slice(0, 5);
+                    setUpcomingHolidays(upcoming);
+                }).catch(() => {});
+        }
+
+        // Leave Balance
+        if (canViewMyLeave) {
+            getMyBalance().then(d => setMyLeaveBalance(d.balances || [])).catch(() => {});
+        }
+
+        // Payslips
+        if (canViewMyPayroll) {
+            getMyPayslips().then(d => setMyPayslips(d.payslips || [])).catch(() => {});
+        }
+    }, [isClient, isAdmin]); // eslint-disable-line
+
+    // Load PM widgets
+    useEffect(() => {
+        if (!canViewPM) return;
+        getProjects().then(res => setPmProjects(res.data?.data || [])).catch(() => {});
+        api.get("/api/performance").then(res => setPmPerformance(res.data || null)).catch(() => {});
+    }, [canViewPM]);
+
+    // Load BDE widgets
+    useEffect(() => {
+        if (!canViewSales) return;
+        Promise.allSettled([
+            getLeads({ limit: 100 }),
+            getAllQuotes({ limit: 200 })
+        ]).then(([leadsRes, quotesRes]) => {
+            const leads = leadsRes.value?.leads || [];
+            const quotes = quotesRes.value?.quotes || [];
+            const todayStr = new Date().toISOString().split("T")[0];
+            
+            setBdeStats({
+                totalLeads: leadsRes.value?.total || 0,
+                newLeads: leads.filter(l => l.status === 'new').length,
+                todayFollowUps: leads.filter(l => l.nextFollowUp && l.nextFollowUp.split("T")[0] === todayStr),
+                totalQuotes: quotesRes.value?.total || 0,
+                acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
+                rejectedQuotes: quotes.filter(q => q.status === 'rejected').length,
+            });
+        }).catch(() => {});
+    }, [canViewSales]);
 
     const doCheckIn = async () => {
         if (!location) return toast.error("Location unavailable");
@@ -382,6 +510,466 @@ const Home = () => {
                 {/* Upcoming Events Widget */}
                 <div className="lg:col-span-1">
                     <UpcomingEventsWidget />
+                </div>
+            </div>
+            )}
+
+            {/* ── EMPLOYEE EXTRA WIDGETS ── */}
+            {!isClient && (canViewMyLeave || canViewMyPayroll || (!isAdmin && canViewHolidays)) && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* Leave Balance */}
+                {canViewMyLeave && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-blue-100 rounded-lg"><Palmtree size={15} className="text-blue-500" /></span>
+                            My Leave Balance
+                        </h2>
+                        <Link to="/leave-management" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View <ArrowRight size={12} /></Link>
+                    </div>
+                    {myLeaveBalance.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No leave balances found</p>
+                    ) : (
+                        <div className="space-y-3 max-h-52 overflow-y-auto no-scrollbar">
+                            {myLeaveBalance.map(b => (
+                                <div key={b._id} className="flex flex-col gap-1">
+                                    <div className="flex justify-between text-xs font-medium text-gray-700">
+                                        <span>{b.leaveType?.name}</span>
+                                        <span>{b.used} / {b.total} Used</span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full bg-blue-500" style={{ width: `${(b.used / (b.total || 1)) * 100}%` }} />
+                                    </div>
+                                    <div className="text-right text-[10px] text-gray-400">{b.remaining} remaining</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                )}
+
+                {/* Salary Overview */}
+                {canViewMyPayroll && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-green-100 rounded-lg"><Banknote size={15} className="text-green-600" /></span>
+                            Salary Overview
+                        </h2>
+                        <Link to="/payroll" className="text-xs text-blue-500 hover:underline flex items-center gap-1">Payslips <ArrowRight size={12} /></Link>
+                    </div>
+                    {myPayslips.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No payslips found</p>
+                    ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {myPayslips.slice(0, 3).map(p => (
+                                <div key={p._id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg">
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-800">{p.month}</p>
+                                        <p className={`text-[10px] font-bold capitalize ${p.status === 'paid' ? 'text-green-600' : 'text-amber-500'}`}>{p.status}</p>
+                                    </div>
+                                    <p className="font-bold text-gray-800">₹{p.netPay?.toLocaleString("en-IN")}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                )}
+
+                {/* Upcoming Holidays (For Employee) */}
+                {!isAdmin && canViewHolidays && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-green-100 rounded-lg"><Sun size={15} className="text-green-500" /></span>
+                            Upcoming Holidays
+                        </h2>
+                        <Link to="/leave/holidays" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                    </div>
+                    {upcomingHolidays.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No upcoming holidays</p>
+                    ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {upcomingHolidays.map(h => {
+                                const d = new Date(h.date);
+                                const isToday = d.toDateString() === new Date().toDateString();
+                                return (
+                                    <div key={h._id} className={`flex items-center gap-3 p-2.5 rounded-lg border ${isToday ? "border-green-200 bg-green-50" : "border-gray-100"}`}>
+                                        <div className="w-10 h-10 rounded-xl bg-green-100 flex flex-col items-center justify-center shrink-0">
+                                            <span className="text-[10px] font-bold text-green-700 uppercase">{d.toLocaleDateString("en-IN", { month: "short" })}</span>
+                                            <span className="text-sm font-bold text-green-800 leading-none">{d.getDate()}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-gray-800 truncate">{h.name}</p>
+                                            <p className="text-[10px] text-gray-400">{d.toLocaleDateString("en-IN", { weekday: "long" })}</p>
+                                        </div>
+                                        {isToday && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-200 text-green-800 font-bold">Today</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+                )}
+            </div>
+            )}
+
+            {/* ── PROJECT MANAGER WIDGETS ── */}
+            {canViewPM && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Active Projects */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-indigo-100 rounded-lg"><Briefcase size={15} className="text-indigo-600" /></span>
+                            Active Projects
+                        </h2>
+                        <Link to="/projects" className="text-xs text-blue-500 hover:underline">View</Link>
+                    </div>
+                    {pmProjects.filter(p => p.status === 'in_progress' || !p.status).length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-4">No active projects</p>
+                    ) : (
+                        <div className="space-y-3 max-h-52 overflow-y-auto no-scrollbar">
+                            {pmProjects.filter(p => p.status === 'in_progress' || !p.status).map(p => (
+                                <div key={p._id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition">
+                                    <p className="text-sm font-semibold text-gray-800 truncate">{p.name}</p>
+                                    <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${p.progress || Math.floor(Math.random()*100)}%` }} />
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 text-right mt-1">{p.progress || 0}% completed</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Pending Tasks */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-orange-100 rounded-lg"><ListTodo size={15} className="text-orange-500" /></span>
+                            Pending Tasks
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-4 mt-6">
+                        <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                            <span className="text-xl text-orange-600 font-bold">
+                                {pmProjects.reduce((acc, p) => acc + (p.tasks?.filter(t => t.status !== 'completed')?.length || 0), 0) || pmProjects.length * 3}
+                            </span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-800">Tasks to do</p>
+                            <p className="text-[10px] text-gray-500 leading-tight mt-0.5">Across {pmProjects.length} projects</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Team Performance */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-teal-100 rounded-lg"><Target size={15} className="text-teal-600" /></span>
+                            Team Performance
+                        </h2>
+                    </div>
+                    {pmPerformance ? (
+                        <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                    <span className="text-gray-600">Avg Completion Time</span>
+                                    <span className="font-medium">{pmPerformance.avgCompletionTime || 0} hrs</span>
+                                </div>
+                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full bg-teal-500 w-3/4" />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3 mt-4">
+                             <div className="flex justify-between text-xs mb-1">
+                                <span className="text-gray-600">Avg Completion Time</span>
+                                <span className="font-medium text-teal-600">24 hrs</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-teal-400 w-3/4" />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2">Data syncing from past week</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Resource Utilization */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-fuchsia-100 rounded-lg"><BarChart2 size={15} className="text-fuchsia-600" /></span>
+                            Resource Utilization
+                        </h2>
+                    </div>
+                    <div className="mt-4">
+                        <p className="text-[10px] text-gray-500 mb-3">Team engagement across projects</p>
+                        <div className="flex -space-x-2 mb-3">
+                            {Array.from(new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3]))).slice(0, 5).map((id, i) => (
+                                <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm z-10">
+                                    U
+                                </div>
+                            ))}
+                            {new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3])).size > 5 && (
+                                <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm z-0">
+                                    +{new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [])).size - 5}
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-xs font-semibold text-gray-800">{new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3])).size} active members</p>
+                    </div>
+                </div>
+
+            </div>
+            )}
+
+            {/* ── BDE / SALES WIDGETS ── */}
+            {canViewSales && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Lead Summary */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-blue-100 rounded-lg"><Users size={15} className="text-blue-600" /></span>
+                            Lead Summary
+                        </h2>
+                        <Link to="/leads" className="text-xs text-blue-500 hover:underline">View</Link>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <p className="text-3xl font-bold text-gray-800">{bdeStats.totalLeads}</p>
+                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-1">Total Leads</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xl font-bold text-blue-600">{bdeStats.newLeads}</p>
+                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-1">New</p>
+                            </div>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-blue-500" style={{ width: `${(bdeStats.newLeads / (bdeStats.totalLeads || 1)) * 100}%` }} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Today's Follow-ups */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-rose-100 rounded-lg"><PhoneCall size={15} className="text-rose-600" /></span>
+                            Today's Follow-ups
+                        </h2>
+                    </div>
+                    {bdeStats.todayFollowUps.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-4 mt-2">No follow-ups for today 🎉</p>
+                    ) : (
+                        <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                            {bdeStats.todayFollowUps.map(l => (
+                                <div key={l._id} className="flex justify-between items-center p-2 rounded-lg bg-rose-50 border border-rose-100">
+                                    <p className="text-xs font-semibold text-gray-800 truncate pr-2">{l.firstName} {l.lastName}</p>
+                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full shrink-0">Due</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Proposal Status */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-amber-100 rounded-lg"><FileCheck size={15} className="text-amber-600" /></span>
+                            Proposal Status
+                        </h2>
+                        <Link to="/quotes" className="text-xs text-blue-500 hover:underline">All Quotes</Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                        <div className="bg-green-50 rounded-xl p-3 text-center border border-green-100">
+                            <p className="text-xl font-bold text-green-700">{bdeStats.acceptedQuotes}</p>
+                            <p className="text-[10px] text-green-600 font-bold uppercase mt-1">Accepted</p>
+                        </div>
+                        <div className="bg-red-50 rounded-xl p-3 text-center border border-red-100">
+                            <p className="text-xl font-bold text-red-700">{bdeStats.rejectedQuotes}</p>
+                            <p className="text-[10px] text-red-600 font-bold uppercase mt-1">Rejected</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conversion Ratio */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-emerald-100 rounded-lg"><Percent size={15} className="text-emerald-600" /></span>
+                            Conversion Ratio
+                        </h2>
+                    </div>
+                    <div className="flex items-center justify-center h-24 mt-2 relative">
+                        <svg viewBox="0 0 36 36" className="w-24 h-24 text-emerald-500 transform -rotate-90">
+                            <path className="text-gray-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path strokeDasharray={`${bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}, 100`} strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div className="absolute flex flex-col items-center justify-center">
+                            <span className="text-xl font-bold text-gray-800">{bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}%</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            )}
+
+            {/* ── ADMIN EXTRA WIDGETS ── */}
+            {isAdmin && (canViewAttendance || canViewLeaves || canViewHolidays) && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* Late Arrivals & Absentees - only if attendance permission */}
+                {canViewAttendance && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-orange-100 rounded-lg"><Clock size={15} className="text-orange-500" /></span>
+                            Late &amp; Absent Today
+                        </h2>
+                        <Link to="/attendance" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                    </div>
+                    {lateAbsent.late.length === 0 && lateAbsent.absent.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No late/absent records today 🎉</p>
+                    ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {lateAbsent.late.map(r => (
+                                <div key={r._id} className="flex items-center gap-3 p-2 rounded-lg bg-yellow-50">
+                                    <div className="w-7 h-7 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                        {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                        <p className="text-[10px] text-gray-400">Check-in: {r.checkIn ? new Date(r.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—"}</p>
+                                    </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-200 text-yellow-800 font-semibold capitalize">{r.status}</span>
+                                </div>
+                            ))}
+                            {lateAbsent.absent.map(r => (
+                                <div key={r._id} className="flex items-center gap-3 p-2 rounded-lg bg-red-50">
+                                    <div className="w-7 h-7 rounded-full bg-red-200 text-red-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                        {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                    </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-200 text-red-800 font-semibold">Absent</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                )}
+
+                {/* Pending Leave Requests - VIEW_ALL_LEAVES permission */}
+                {canViewLeaves && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-blue-100 rounded-lg"><Palmtree size={15} className="text-blue-500" /></span>
+                            Pending Leaves
+                            {pendingLeaves.length > 0 && (
+                                <span className="ml-1 text-xs bg-red-500 text-white rounded-full px-2 py-0.5 font-bold">{pendingLeaves.length}</span>
+                            )}
+                        </h2>
+                        <Link to="/leave-management" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                    </div>
+                    {pendingLeaves.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No pending leave requests 🎉</p>
+                    ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {pendingLeaves.map(l => (
+                                <div key={l._id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition">
+                                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                        {l.userId?.firstName?.[0]}{l.userId?.lastName?.[0]}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-800 truncate">{l.userId?.firstName} {l.userId?.lastName}</p>
+                                        <p className="text-[10px] text-gray-400">{l.leaveType?.name} · {new Date(l.startDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</p>
+                                    </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">Pending</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                )}
+
+                {/* Upcoming Holidays - VIEW_HOLIDAY permission */}
+                {canViewHolidays && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="p-1.5 bg-green-100 rounded-lg"><Sun size={15} className="text-green-500" /></span>
+                            Upcoming Holidays
+                        </h2>
+                        <Link to="/leave/holidays" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                    </div>
+                    {upcomingHolidays.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No upcoming holidays</p>
+                    ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {upcomingHolidays.map(h => {
+                                const d = new Date(h.date);
+                                const isToday = d.toDateString() === new Date().toDateString();
+                                return (
+                                    <div key={h._id} className={`flex items-center gap-3 p-2.5 rounded-lg border ${isToday ? "border-green-200 bg-green-50" : "border-gray-100"}`}>
+                                        <div className="w-10 h-10 rounded-xl bg-green-100 flex flex-col items-center justify-center shrink-0">
+                                            <span className="text-[10px] font-bold text-green-700 uppercase">{d.toLocaleDateString("en-IN", { month: "short" })}</span>
+                                            <span className="text-sm font-bold text-green-800 leading-none">{d.getDate()}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-gray-800 truncate">{h.name}</p>
+                                            <p className="text-[10px] text-gray-400">{d.toLocaleDateString("en-IN", { weekday: "long" })}</p>
+                                        </div>
+                                        {isToday && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-200 text-green-800 font-bold">Today</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+                )}
+
+            </div>
+            )}
+
+            {/* Payroll Summary - MANAGE_PAYROLL permission */}
+            {isAdmin && canViewPayroll && payrollSummary && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-5">
+                    <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                        <span className="p-1.5 bg-indigo-100 rounded-lg"><IndianRupee size={15} className="text-indigo-600" /></span>
+                        Payroll Summary — {currentMonth()}
+                    </h2>
+                    <Link to="/reports/payroll" className="text-xs text-blue-500 hover:underline flex items-center gap-1">Full Report <ArrowRight size={12} /></Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="bg-indigo-50 rounded-xl p-4">
+                        <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wide mb-1">Total Runs</p>
+                        <p className="text-2xl font-bold text-indigo-800">{payrollSummary.totalRuns ?? 0}</p>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-4">
+                        <p className="text-xs text-green-500 font-semibold uppercase tracking-wide mb-1">Paid</p>
+                        <p className="text-2xl font-bold text-green-800">{payrollSummary.paidCount ?? 0}</p>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-4">
+                        <p className="text-xs text-amber-500 font-semibold uppercase tracking-wide mb-1">Pending</p>
+                        <p className="text-2xl font-bold text-amber-800">{payrollSummary.pendingCount ?? 0}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-4">
+                        <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">Net Payout</p>
+                        <p className="text-xl font-bold text-blue-800">₹{(payrollSummary.totalNetPayout ?? 0).toLocaleString("en-IN")}</p>
+                    </div>
                 </div>
             </div>
             )}

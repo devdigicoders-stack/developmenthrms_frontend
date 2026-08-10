@@ -68,7 +68,7 @@ const NAV = [
         items: [
             { name: "Attendance Report", icon: CalendarDays, path: "/reports/attendance", permissions: ["VIEW_ALL_ATTENDANCES", "VIEW_TEAM_ATTENDANCE"] },
             { name: "Leave Report", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
-            { name: "Payroll Report", icon: IndianRupee, path: "/reports/payroll", permissions: ["VIEW_PAYROLL"] },
+            { name: "Payroll Report", icon: IndianRupee, path: "/reports/payroll", permissions: ["MANAGE_PAYROLL"] },
             { name: "Employee Report", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
             { name: "Sales Report", icon: TrendingUp, path: "/reports/sales", permissions: ["VIEW_SALES_REPORTS"] },
             { name: "Developer Performance", icon: BarChart2, path: "/reports/performance", permissions: [] },

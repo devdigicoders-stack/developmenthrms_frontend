@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import EmployeeDrawer from "../components/EmployeeDrawer"
 import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2 } from "lucide-react";
 import { fetchUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "../services/UserService";
@@ -24,6 +25,7 @@ const StatCard = ({ icon, label, value, iconBg, iconColor }) => (
 
 const User = () => {
     const { user } = useStore();
+    const navigate = useNavigate();
     const permissions = user?.role?.permissions || [];
     const hasPermission = (perm) => permissions.includes(perm);
 
@@ -427,6 +429,13 @@ const User = () => {
                                                     {u.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => navigate(`/users/${u._id}`)}
+                                                title="View Full Profile"
+                                                className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition"
+                                            >
+                                                <Eye size={15} />
+                                            </button>
                                             {hasPermission("DELETE_USER") && u.role?.name !== "super_admin" && (
                                                 <button
                                                     onClick={() => handleDeleteUser(u._id)}

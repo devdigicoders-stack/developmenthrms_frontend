@@ -8,6 +8,7 @@ import AuthLayout from "../layout/AuthLayout";
 import Role from "../modules/roles/pages/Role";
 import Company from "../modules/company/pages/Company";
 import User from "../modules/employee/pages/User";
+import EmployeeProfile from "../modules/employee/pages/EmployeeProfile";
 import Department from "../modules/department/pages/department";
 import Attendance from "../modules/attendance/pages/Attendance";
 import WorkShift from "../modules/workshift/pages/WorkShift";
@@ -53,6 +54,7 @@ import Assets from "../modules/assets/pages/Assets";
 import MyAssets from "../modules/assets/pages/MyAssets";
 import MyResignation from "../modules/exit/pages/MyResignation";
 import ManageResignations from "../modules/exit/pages/ManageResignations";
+import Placeholder from "../Pages/Placeholder";
 
 const AppRoute = createBrowserRouter([
     {
@@ -78,6 +80,7 @@ const AppRoute = createBrowserRouter([
             { path: "/onboarding-approvals", element: <AdminApprovals /> },
             { path: "/offer-letter", element: <OfferLetter /> },
             { path: "/users", element: <User/> },
+            { path: "/users/:id", element: <EmployeeProfile/> },
             {path:"/companies", element: <Company/>},
             { path: "/departments", element: <Department/> },
             { path: "/attendance", element: <Attendance /> },
@@ -120,6 +123,10 @@ const AppRoute = createBrowserRouter([
             { path: "/settings/user", element: <User/> },
             { path: "/profile", element: <Profile /> },
             { path: "/assets", element: <Assets /> },
+
+            { path: "/biometric", element: <Placeholder /> },
+            { path: "/attendance-rules", element: <Placeholder /> },
+            { path: "/dept-reports", element: <Placeholder /> },
             { path: "*", element: <Home /> }
         ]
     },

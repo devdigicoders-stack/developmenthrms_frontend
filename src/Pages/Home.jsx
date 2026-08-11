@@ -956,19 +956,19 @@ const Home = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-indigo-50 rounded-xl p-4">
                         <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wide mb-1">Total Runs</p>
-                        <p className="text-2xl font-bold text-indigo-800">{payrollSummary.totalRuns ?? 0}</p>
+                        <p className="text-2xl font-bold text-indigo-800">{payrollSummary.total ?? 0}</p>
                     </div>
                     <div className="bg-green-50 rounded-xl p-4">
                         <p className="text-xs text-green-500 font-semibold uppercase tracking-wide mb-1">Paid</p>
-                        <p className="text-2xl font-bold text-green-800">{payrollSummary.paidCount ?? 0}</p>
+                        <p className="text-2xl font-bold text-green-800">{payrollSummary.paid ?? 0}</p>
                     </div>
                     <div className="bg-amber-50 rounded-xl p-4">
                         <p className="text-xs text-amber-500 font-semibold uppercase tracking-wide mb-1">Pending</p>
-                        <p className="text-2xl font-bold text-amber-800">{payrollSummary.pendingCount ?? 0}</p>
+                        <p className="text-2xl font-bold text-amber-800">{payrollSummary.pending ?? 0}</p>
                     </div>
                     <div className="bg-blue-50 rounded-xl p-4">
                         <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">Net Payout</p>
-                        <p className="text-xl font-bold text-blue-800">₹{(payrollSummary.totalNetPayout ?? 0).toLocaleString("en-IN")}</p>
+                        <p className="text-xl font-bold text-blue-800">₹{(payrollSummary.totalNet ?? 0).toLocaleString("en-IN")}</p>
                     </div>
                 </div>
             </div>

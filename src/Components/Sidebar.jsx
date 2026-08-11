@@ -24,6 +24,7 @@ const NAV = [
             { name: "Employee Onboarding", icon: UserCheck, path: "/onboarding-approvals", permissions: ["APPROVE_ONBOARDING", "MANAGE_USER"] },
             { name: "Profile Management", icon: Users, path: "/users", permissions: ["VIEW_USER", "VIEW_ALL_USERS"] },
             { name: "Department & Designation", icon: FolderKanban, path: "/departments", permissions: ["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"] },
+            { name: "Employment Status", icon: ShieldCheck, path: "/employment-status", permissions: ["VIEW_EMPLOYMENT_STATUS", "VIEW_ALL_EMPLOYMENT_STATUSES"] },
             { name: "Exit / Resignation", icon: LogOut, path: "/manage-resignations", permissions: ["MANAGE_RESIGNATIONS"] },
         ],
     },
@@ -35,6 +36,14 @@ const NAV = [
             { name: "Clients", icon: Users, path: "/clients", permissions: ["VIEW_ALL_PROJECTS"] },
             { name: "Leads", icon: TrendingUp, path: "/leads", permissions: ["VIEW_LEAD", "VIEW_ALL_LEADS"] },
             { name: "Quotes", icon: Receipt, path: "/quotes", permissions: ["VIEW_QUOTE", "VIEW_ALL_QUOTES"] },
+        ],
+    },
+    {
+        group: "Payments",
+        groupIcon: Banknote,
+        items: [
+            { name: "Manage Payments", icon: Banknote, path: "/manage-payments", permissions: ["MANAGE_PAYMENTS"] },
+            { name: "Submit Payment", icon: Receipt, path: "/submit-payment", permissions: ["SUBMIT_PAYMENT"] },
         ],
     },
     {
@@ -61,6 +70,7 @@ const NAV = [
         items: [
             { name: "Leave Types", icon: FileText, path: "/leave/types", permissions: ["VIEW_LEAVE_TYPE", "VIEW_ALL_LEAVE_TYPES"] },
             { name: "Leave Application", icon: Palmtree, path: "/leave-management", permissions: ["VIEW_LEAVE", "VIEW_ALL_LEAVES"] },
+            { name: "Assign Leave", icon: CalendarDays, path: "/leave/assign", permissions: ["VIEW_ALL_LEAVES", "MANAGE_LEAVE"] },
             { name: "Holiday Calendar", icon: CalendarDays, path: "/leave/holidays", permissions: ["VIEW_HOLIDAY", "VIEW_ALL_HOLIDAYS"] },
             { name: "Leave Reports", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
         ],
@@ -79,12 +89,14 @@ const NAV = [
             { name: "HR Policies", icon: ShieldCheck, path: "/manage-policies", permissions: ["MANAGE_POLICY"] },
             { name: "View Policy", icon: FileText, path: "/policies", permissions: ["VIEW_POLICY"] },
             { name: "NDA Management", icon: ShieldCheck, path: "/manage-nda", permissions: ["MANAGE_NDA"] },
+            { name: "View NDA", icon: FileText, path: "/nda", permissions: ["VIEW_NDA"], hideForClient: true },
         ],
     },
     {
         group: "Settings",
         groupIcon: Settings,
         items: [
+            { name: "General Settings", icon: Settings, path: "/settings", permissions: [] },
             { name: "Role Based Access", icon: ShieldCheck, path: "/settings/roles", permissions: ["VIEW_ROLE", "VIEW_ALL_ROLES"] },
             { name: "Departments", icon: FolderKanban, path: "/departments", permissions: ["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"] },
             { name: "Companies", icon: Building2, path: "/companies", superAdminOnly: true },
@@ -114,6 +126,7 @@ const NAV = [
             { name: "Leave Reports", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
             { name: "Payroll Reports", icon: IndianRupee, path: "/reports/payroll", permissions: ["MANAGE_PAYROLL"] },
             { name: "Employee Reports", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
+            { name: "Sales Reports", icon: TrendingUp, path: "/reports/sales", permissions: ["VIEW_ALL_LEADS", "MANAGE_LEADS"] },
             { name: "Performance Reports", icon: BarChart2, path: "/reports/performance", permissions: [] },
             { name: "Department Reports", icon: FolderKanban, path: "/dept-reports", permissions: ["VIEW_ALL_DEPARTMENTS"] },
         ],

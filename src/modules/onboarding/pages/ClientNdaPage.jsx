@@ -23,10 +23,24 @@ const ClientNdaPage = ({ inPanel = false }) => {
             const res = await getClientNdaTemplate();
             if (res.success && res.nda?.document?.url) {
                 setTemplateUrl(res.nda.document.url);
+            } else {
+                // No active Client NDA found — auto-skip silently and go to dashboard
+                try {
+                    const skipRes = await api.post("/api/nda/client/skip");
+                    if (skipRes.data.success) {
+                        setUser({ ...user, clientNdaStatus: "skipped" });
+                    }
+                } catch (skipErr) {
+                    console.error("Auto-skip failed:", skipErr);
+                }
+                navigate("/", { replace: true });
+                return;
             }
         } catch (error) {
             console.error("Failed to fetch NDA template:", error);
-            toast.error("Failed to load NDA document");
+            // On error also redirect to dashboard
+            navigate("/", { replace: true });
+            return;
         } finally {
             setLoading(false);
         }
@@ -86,22 +100,8 @@ const ClientNdaPage = ({ inPanel = false }) => {
     }
 
     if (!templateUrl && !loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">No NDA Available</h2>
-                    <p className="text-gray-500 mb-6">The administrator hasn't uploaded a Client NDA yet.</p>
-                    {!inPanel && (
-                        <button 
-                            onClick={handleSkip}
-                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition"
-                        >
-                            Skip for Now
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
+        // No NDA — already redirected in fetchTemplate
+        return null;
     }
 
     return (

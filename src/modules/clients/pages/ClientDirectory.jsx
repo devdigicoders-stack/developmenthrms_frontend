@@ -46,25 +46,15 @@ const ClientDirectory = () => {
     );
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
+        <div className="p-8 w-full space-y-8 bg-gray-50 min-h-screen">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Clients Directory</h1>
+                    <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Clients Directory</h1>
                     <p className="text-gray-500 mt-1">Manage and view all your clients</p>
                 </div>
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard 
-                    icon={<Users size={24} />} 
-                    label="Total Clients" 
-                    value={clients.length} 
-                    iconBg="bg-indigo-50" 
-                    iconColor="text-indigo-600" 
-                />
-            </div>
 
             {/* Main Content Area */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

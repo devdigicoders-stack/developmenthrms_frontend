@@ -8,6 +8,7 @@ import AuthLayout from "../layout/AuthLayout";
 import Role from "../modules/roles/pages/Role";
 import Company from "../modules/company/pages/Company";
 import User from "../modules/employee/pages/User";
+import ClientDirectory from "../modules/clients/pages/ClientDirectory";
 import EmployeeProfile from "../modules/employee/pages/EmployeeProfile";
 import Department from "../modules/department/pages/department";
 import Attendance from "../modules/attendance/pages/Attendance";
@@ -80,6 +81,7 @@ const AppRoute = createBrowserRouter([
             { path: "/onboarding-approvals", element: <AdminApprovals /> },
             { path: "/offer-letter", element: <OfferLetter /> },
             { path: "/users", element: <User/> },
+            { path: "/clients", element: <ClientDirectory /> },
             { path: "/users/:id", element: <EmployeeProfile/> },
             {path:"/companies", element: <Company/>},
             { path: "/departments", element: <Department/> },

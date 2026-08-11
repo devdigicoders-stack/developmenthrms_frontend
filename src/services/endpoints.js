@@ -14,6 +14,7 @@ export const ENDPOINTS = {
   USER: {
     GET_ALL: `/api/user/all`,
     GET_ALL_BY_COMPANY: (companyId) => `/api/company/${companyId}/users`,
+    GET_CLIENTS: `/api/user/clients`,
     UPDATE_USER: (id) => `/api/user/${id}`,
     DELETE_USER: (id) => `/api/user/${id}`,
     TOGGLE_STATUS: (id) => `/api/user/${id}/toggle-status`,

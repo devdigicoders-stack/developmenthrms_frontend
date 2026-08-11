@@ -32,6 +32,7 @@ const NAV = [
         groupIcon: Kanban,
         items: [
             { name: "Projects", icon: Kanban, path: "/projects", permissions: ["VIEW_PROJECT", "VIEW_ALL_PROJECTS"] },
+            { name: "Clients", icon: Users, path: "/clients", permissions: ["VIEW_ALL_PROJECTS"] },
             { name: "Leads", icon: TrendingUp, path: "/leads", permissions: ["VIEW_LEAD", "VIEW_ALL_LEADS"] },
             { name: "Quotes", icon: Receipt, path: "/quotes", permissions: ["VIEW_QUOTE", "VIEW_ALL_QUOTES"] },
         ],

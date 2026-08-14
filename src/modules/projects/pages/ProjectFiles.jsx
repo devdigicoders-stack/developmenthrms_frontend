@@ -593,7 +593,7 @@ const ProjectFiles = ({ projectId, members, currentUserId, isAdmin, isClientView
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-gray-700">{bundles.length} bundle(s)</p>
-                {true && (
+                {canUploadFile && (
                     <button onClick={() => setDrawerOpen(true)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
                         <Plus size={13} /> Add Files

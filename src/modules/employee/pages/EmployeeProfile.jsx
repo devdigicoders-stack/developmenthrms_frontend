@@ -12,6 +12,7 @@ import { getOnboardingRequests } from "../../../services/onboardingService";
 import { getProjects, getTasksByProject } from "../../projects/services/projectService";
 import { getLeads } from "../../leads/services/leadService";
 import { getTickets } from "../../tickets/services/ticketService";
+import { assetService } from "../../../services/assetService";
 import api from "../../../services/axios";
 import { useStore } from "../../../context/StoreContext";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -43,6 +44,10 @@ const EmployeeProfile = () => {
     // Tickets State
     const [userTickets, setUserTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(false);
+
+    // Assets State
+    const [userAssets, setUserAssets] = useState([]);
+    const [loadingAssets, setLoadingAssets] = useState(false);
 
     // NDA Signatures State
     const [employeeSignatures, setEmployeeSignatures] = useState([]);
@@ -160,6 +165,19 @@ const EmployeeProfile = () => {
                     setUserTickets(filtered);
                 }
             }).catch(console.error).finally(() => setLoadingTickets(false));
+        }
+
+        if (activeTab === "assets" && userAssets.length === 0) {
+            setLoadingAssets(true);
+            assetService.getAssets().then(res => {
+                if (res.success || res.assets) {
+                    const assets = res.assets || res.data?.assets || [];
+                    const filtered = assets.filter(a => 
+                        a.assignedTo?._id === id || a.assignedTo === id
+                    );
+                    setUserAssets(filtered);
+                }
+            }).catch(console.error).finally(() => setLoadingAssets(false));
         }
 
         if (activeTab === "nda_signatures" && employeeSignatures.length === 0) {
@@ -871,12 +889,47 @@ const EmployeeProfile = () => {
                 )}
 
                 {activeTab === "assets" && (
-                    <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm text-center">
-                        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Laptop size={32} className="text-indigo-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800">Assigned Assets</h3>
-                        <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">Track laptops, monitors, access cards, and other company property assigned to this user.</p>
+                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <Laptop size={18} className="text-indigo-500"/> Assigned Assets
+                        </h3>
+                        {loadingAssets ? (
+                            <div className="flex justify-center p-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                            </div>
+                        ) : userAssets.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {userAssets.map(asset => (
+                                    <div key={asset._id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-gray-50">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                                                <Laptop size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-gray-800">{asset.name || asset.assetName}</h4>
+                                                <p className="text-xs text-gray-500">{asset.category || "General"}</p>
+                                            </div>
+                                        </div>
+                                        {asset.serialNumber && (
+                                            <div className="text-sm text-gray-600 mb-1">
+                                                <span className="font-medium">S/N:</span> {asset.serialNumber}
+                                            </div>
+                                        )}
+                                        <div className="mt-3 inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+                                            {asset.status || "Assigned"}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Laptop size={24} className="text-gray-400" />
+                                </div>
+                                <h4 className="text-lg font-semibold text-gray-700">No Assets Assigned</h4>
+                                <p className="text-sm text-gray-500 mt-1">This employee currently has no company assets assigned.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 

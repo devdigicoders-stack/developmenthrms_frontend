@@ -91,11 +91,15 @@ const EmployeeProfile = () => {
                                 a.employee?._id === id || a.employee === id
                             );
                             userAtt.forEach(record => {
-                                if (record.status === 'Present') {
+                                const status = record.status?.toLowerCase() || '';
+                                if (status === 'present' || status === 'half-day' || status === 'regularized') {
                                     present++;
                                     if (record.isLate) late++;
-                                } else if (record.status === 'Absent') {
+                                } else if (status === 'absent') {
                                     absent++;
+                                } else if (status === 'late') {
+                                    late++;
+                                    present++; // Late is generally counted as present for the pie chart
                                 }
                             });
                         }
@@ -515,9 +519,9 @@ const EmployeeProfile = () => {
                                                     {record.workingHours || record.hours || "—"}
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                                                        record.status === "Present" ? "bg-green-100 text-green-700" :
-                                                        record.status === "Absent" ? "bg-red-100 text-red-700" :
+                                                    <span className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
+                                                        record.status?.toLowerCase() === "present" ? "bg-green-100 text-green-700" :
+                                                        record.status?.toLowerCase() === "absent" ? "bg-red-100 text-red-700" :
                                                         "bg-yellow-100 text-yellow-700"
                                                     }`}>
                                                         {record.status} {record.isLate ? "(Late)" : ""}

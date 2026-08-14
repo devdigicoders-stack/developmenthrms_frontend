@@ -41,6 +41,11 @@ const ClientMyNda = () => {
 
     const docUrl = signature.signedDocumentUrl;
 
+    let finalDocUrl = docUrl;
+    if (finalDocUrl && finalDocUrl.includes('onrender.com') && finalDocUrl.startsWith('http://')) {
+        finalDocUrl = finalDocUrl.replace('http://', 'https://');
+    }
+
     return (
         <div className="flex flex-col h-[calc(100vh-60px)] bg-white w-full">
             {/* Header Area */}
@@ -55,7 +60,7 @@ const ClientMyNda = () => {
                     </div>
                 </div>
                 <a
-                    href={docUrl}
+                    href={finalDocUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     download
@@ -69,7 +74,7 @@ const ClientMyNda = () => {
             {/* Document Viewer Area */}
             <div className="flex-1 w-full bg-gray-100 p-0 md:p-4">
                 <iframe 
-                    src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    src={`${finalDocUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                     className="w-full h-full border border-gray-200 shadow-sm bg-white"
                     title="Signed NDA"
                 ></iframe>

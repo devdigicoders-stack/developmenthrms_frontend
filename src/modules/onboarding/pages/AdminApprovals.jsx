@@ -6,6 +6,16 @@ import { FaReact } from "react-icons/fa";
 import { useStore } from "../../../context/StoreContext";
 import Swal from "sweetalert2";
 
+const getDynamicUrl = (dbUrl) => {
+    if (!dbUrl) return "";
+    if (dbUrl.includes("localhost:8008")) {
+        const relativePath = dbUrl.split("localhost:8008")[1];
+        const baseUrl = import.meta.env.VITE_BASE_URL || "";
+        return `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}${relativePath}`;
+    }
+    return dbUrl;
+};
+
 export default function AdminApprovals() {
     const { user } = useStore();
     const [requests, setRequests] = useState([]);
@@ -267,7 +277,7 @@ export default function AdminApprovals() {
                                                 { label: "Relieving Letter", doc: selectedRequest.previousCompany?.relievingLetterFile },
                                                 { label: "Salary Slips", doc: selectedRequest.previousCompany?.salarySlipsFile }
                                             ].map((item, idx) => item.doc?.url && (
-                                                <a key={idx} href={item.doc.url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-2xl hover:bg-purple-50 hover:border-purple-300 hover:shadow-md transition-all group text-center aspect-square">
+                                                <a key={idx} href={getDynamicUrl(item.doc.url)} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-2xl hover:bg-purple-50 hover:border-purple-300 hover:shadow-md transition-all group text-center aspect-square">
                                                     <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                                                         <FileText className="text-purple-500" size={20}/>
                                                     </div>

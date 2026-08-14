@@ -81,10 +81,15 @@ const EmployeeProfile = () => {
                         const today = new Date();
                         const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
                         const attRes = await getCompanyAttendance({ month: monthStr, employee: id });
+                        const attList = attRes?.records || attRes?.data || [];
                         let present = 0, absent = 0, late = 0;
+                        let userAtt = [];
                         
-                        if (attRes && attRes.data) {
-                            const userAtt = attRes.data.filter(a => a.employee?._id === id || a.employee === id);
+                        if (attList.length > 0) {
+                            userAtt = attList.filter(a => 
+                                a.userId?._id === id || a.userId === id || 
+                                a.employee?._id === id || a.employee === id
+                            );
                             userAtt.forEach(record => {
                                 if (record.status === 'Present') {
                                     present++;
@@ -97,7 +102,7 @@ const EmployeeProfile = () => {
                         
                         // Fallback to 0 if no records found this month
                         setAttendanceSummary({ present, absent, late });
-                        setAttendanceRecords(attRes && attRes.data ? attRes.data.filter(a => a.employee?._id === id || a.employee === id) : []);
+                        setAttendanceRecords(userAtt);
                         setAttendanceData([
                             { name: "Present", value: present, color: "#22c55e" },
                             { name: "Absent", value: absent, color: "#ef4444" },

@@ -32,8 +32,8 @@ export default function OfferLetter() {
     }, []);
 
     const handleDownload = async () => {
+        const toastId = toast.loading("Generating PDF, please wait...");
         try {
-            const toastId = toast.loading("Generating PDF, please wait...");
             const res = await api.get("/api/onboarding/my-offer-letter/download", {
                 responseType: "blob"
             });
@@ -46,7 +46,7 @@ export default function OfferLetter() {
             link.remove();
             toast.update(toastId, { render: "PDF Downloaded successfully!", type: "success", isLoading: false, autoClose: 3000 });
         } catch (error) {
-            toast.error("Failed to download PDF");
+            toast.update(toastId, { render: "Failed to download PDF", type: "error", isLoading: false, autoClose: 3000 });
         }
     };
 

@@ -293,7 +293,7 @@ const Profile = () => {
 
                     {/* ── Personal ── */}
                     {tab === "personal" && (
-                        isAdmin && editMode ? (
+                        editMode ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <Field label="First Name" icon={User}>
                                     <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" />

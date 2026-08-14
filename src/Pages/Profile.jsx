@@ -221,7 +221,7 @@ const Profile = () => {
                                     ? <img src={preview} alt="avatar" className="w-full h-full object-cover" />
                                     : <span className="text-3xl font-bold text-blue-600">{initials}</span>}
                             </div>
-                            {isAdmin && editMode && (
+                            {editMode && (
                                 <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition">
                                     <Camera size={14} className="text-white" />
                                     <input type="file" name="profilePic" accept="image/*" onChange={handleChange} className="hidden" />
@@ -235,25 +235,23 @@ const Profile = () => {
                                 <h1 className="text-xl font-bold text-gray-900">{form.firstName} {form.lastName}</h1>
                                 <p className="text-sm text-gray-500">{form.role}{form.companyId ? ` · ${form.companyId}` : ""}</p>
                             </div>
-                            {/* {isAdmin && (
-                                !editMode ? (
-                                    <button onClick={() => setEditMode(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition shadow-sm">
-                                        <Pencil size={14} /> Edit Profile
+                            {!editMode ? (
+                                <button onClick={() => setEditMode(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition shadow-sm">
+                                    <Pencil size={14} /> Edit Profile
+                                </button>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <button onClick={handleCancel}
+                                        className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl text-sm transition">
+                                        <X size={14} /> Cancel
                                     </button>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <button onClick={handleCancel}
-                                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl text-sm transition">
-                                            <X size={14} /> Cancel
-                                        </button>
-                                        <button onClick={handleSave} disabled={saving}
-                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-60">
-                                            <Check size={14} /> {saving ? "Saving..." : "Save Changes"}
-                                        </button>
-                                    </div>
-                                )
-                            )} */}
+                                    <button onClick={handleSave} disabled={saving}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-60">
+                                        <Check size={14} /> {saving ? "Saving..." : "Save Changes"}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

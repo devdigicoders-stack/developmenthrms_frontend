@@ -206,7 +206,7 @@ const QUICK_LINKS = [
         path: "/leads",
         icon: TrendingUp,
         color: "bg-sky-50 text-sky-600",
-        perms: [],
+        perms: ["VIEW_LEAD", "VIEW_ALL_LEADS"],
     },
     {
         title: "Quote Management",
@@ -214,7 +214,7 @@ const QUICK_LINKS = [
         path: "/quotes",
         icon: Receipt,
         color: "bg-indigo-50 text-indigo-600",
-        perms: [],
+        perms: ["VIEW_QUOTE", "VIEW_ALL_QUOTES"],
     },
 ];
 

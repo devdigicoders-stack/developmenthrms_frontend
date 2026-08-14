@@ -60,7 +60,7 @@ export const createCompanyWithAdmin = async (companyData) => {
 export const updateCompanyWithAdmin = async (companyId, companyData) => {
   try {
     const response = await api.put(
-      ENDPOINTS.COMPANY.UPDATE_WITH_ADMIN(companyId),
+      ENDPOINTS.COMPANY.UPDATE_COMPANY_WITH_ADMIN(companyId),
       companyData
     );
     return response.data;

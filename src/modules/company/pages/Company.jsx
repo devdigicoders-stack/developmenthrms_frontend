@@ -6,7 +6,7 @@ import { useStore } from "../../../context/StoreContext";
 import { toast } from "react-toastify";
 import {
     fetchAllCompaniesForSuperAdmin, createCompanyWithAdmin,
-    updateCompany, deleteCompany, toggleCompanyStatus, uploadCompanyIcon,
+    updateCompany, updateCompanyWithAdmin, deleteCompany, toggleCompanyStatus, uploadCompanyIcon,
 } from "../services/companyService";
 
 const Company = () => {
@@ -77,7 +77,7 @@ const Company = () => {
 
     const handleUpdate = async (data) => {
         const toastId = toast.loading("Updating company...");
-        try { setLoading(true); await updateCompany(selected._id, data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
+        try { setLoading(true); await updateCompanyWithAdmin(selected._id, data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
         catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to update company.", type: "error", isLoading: false, autoClose: 3000 }); }
         finally { setLoading(false); }
     };

@@ -72,7 +72,7 @@ const MyResignation = () => {
     const showForm = !resignation || showNewForm;
 
     return (
-        <div className="p-6 h-full flex flex-col items-center justify-center max-w-4xl mx-auto w-full">
+        <div className="p-4 sm:p-6 min-h-full flex flex-col items-center max-w-4xl mx-auto w-full pb-20">
             
             {showForm ? (
                 <div className="bg-white w-full rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -150,8 +150,8 @@ const MyResignation = () => {
                         </div>
                     </div>
 
-                    <div className="p-8 space-y-8 bg-white">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             {/* Requested Date */}
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] transition-all hover:shadow-lg">
                                 <div className="flex items-center gap-3 mb-4 text-gray-600">

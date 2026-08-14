@@ -4,6 +4,7 @@ import CrudModal from "../../../Components/CrudModal";
 import { Plus, Pencil, Trash2, Building2, ToggleLeft, ToggleRight, Upload } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { toast } from "react-toastify";
+import Swal from 'sweetalert2';
 import {
     fetchAllCompaniesForSuperAdmin, createCompanyWithAdmin,
     updateCompany, updateCompanyWithAdmin, deleteCompany, toggleCompanyStatus, uploadCompanyIcon,
@@ -83,10 +84,26 @@ const Company = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this company?")) return;
-        const toastId = toast.loading("Deleting company...");
-        try { await deleteCompany(id); await loadCompanies(); toast.update(toastId, { render: "Company deleted successfully!", type: "success", isLoading: false, autoClose: 3000 }); } 
-        catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to delete company.", type: "error", isLoading: false, autoClose: 3000 }); }
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        });
+        
+        if (result.isConfirmed) {
+            const toastId = toast.loading("Deleting company...");
+            try { 
+                await deleteCompany(id); 
+                await loadCompanies(); 
+                toast.update(toastId, { render: "Company deleted successfully!", type: "success", isLoading: false, autoClose: 3000 }); 
+            } catch (err) { 
+                toast.update(toastId, { render: err?.response?.data?.message || "Failed to delete company.", type: "error", isLoading: false, autoClose: 3000 }); 
+            }
+        }
     };
 
     const handleToggle = async (id) => {

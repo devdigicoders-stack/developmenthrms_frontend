@@ -253,7 +253,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                                 {!collapsed && (
                                     <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${!isOpen ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100'}`}>
                                         {visible.map(item => (
-                                        <NavLink key={item.path} to={item.path} end={item.path === "/"} onClick={close}
+                                        <NavLink key={item.path} to={item.path} end={item.path === "/" || item.path === "/settings"} onClick={close}
                                             className={({ isActive }) =>
                                                 `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200
                                                 ${isActive 

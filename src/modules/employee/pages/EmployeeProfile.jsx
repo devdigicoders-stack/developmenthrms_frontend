@@ -497,7 +497,14 @@ const EmployeeProfile = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {attendanceRecords.length > 0 ? attendanceRecords.map((record, idx) => (
+                                        {attendanceRecords.length > 0 ? attendanceRecords.map((record, idx) => {
+                                            const formatTime = (dateStr) => {
+                                                if (!dateStr) return "—";
+                                                return new Date(dateStr).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+                                            };
+                                            const hours = record.workHours ? `${record.workHours.toFixed(1)}h` : "—";
+                                            
+                                            return (
                                             <tr key={record._id || idx} className="hover:bg-gray-50 transition">
                                                 <td className="p-4">
                                                     <span className="font-medium text-gray-900">
@@ -505,18 +512,18 @@ const EmployeeProfile = () => {
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-sm font-medium text-green-600">{record.punchIn || record.checkIn || "—"}</span>
+                                                    <span className="text-sm font-medium text-green-600">{formatTime(record.checkIn)}</span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-sm font-medium text-rose-500">{record.punchOut || record.checkOut || "—"}</span>
+                                                    <span className="text-sm font-medium text-rose-500">{formatTime(record.checkOut)}</span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-medium">
-                                                        {record.shift || "Work From Home"}
+                                                        {record.workShiftId?.name || "Regular"}
                                                     </span>
                                                 </td>
-                                                <td className="p-4 text-sm text-gray-600">
-                                                    {record.workingHours || record.hours || "—"}
+                                                <td className="p-4 text-sm font-medium text-gray-600">
+                                                    {hours}
                                                 </td>
                                                 <td className="p-4">
                                                     <span className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
@@ -528,7 +535,7 @@ const EmployeeProfile = () => {
                                                     </span>
                                                 </td>
                                             </tr>
-                                        )) : (
+                                        )}) : (
                                             <tr>
                                                 <td colSpan="6" className="p-8 text-center text-gray-500 italic">
                                                     No attendance records found for this month.

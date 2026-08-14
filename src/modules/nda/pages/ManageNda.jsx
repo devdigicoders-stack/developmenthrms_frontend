@@ -25,6 +25,21 @@ const ManageNda = () => {
     const [selectedSignatureDoc, setSelectedSignatureDoc] = useState(null);
     const [ndaToDelete, setNdaToDelete] = useState(null);
 
+    const getDocumentUrl = (url) => {
+        if (!url) return "";
+        let baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        let finalUrl = url;
+        if (url.startsWith("http://localhost:8008")) {
+            finalUrl = url.replace("http://localhost:8008", baseUrl);
+        } else if (url.startsWith("/")) {
+            finalUrl = `${baseUrl}${url}`;
+        }
+        if (finalUrl.includes('onrender.com') && finalUrl.startsWith('http://')) {
+            finalUrl = finalUrl.replace('http://', 'https://');
+        }
+        return finalUrl;
+    };
+
     useEffect(() => {
         fetchNdas();
         fetchClientSignatures();
@@ -493,7 +508,7 @@ const ManageNda = () => {
                             <div className="flex items-center gap-3">
                                 {selectedSignatureDoc.signedDocumentUrl && (
                                     <a 
-                                        href={selectedSignatureDoc.signedDocumentUrl} 
+                                        href={getDocumentUrl(selectedSignatureDoc.signedDocumentUrl)} 
                                         download={`Signed_NDA_${selectedSignatureDoc.userId.firstName}_${selectedSignatureDoc.userId.lastName}.pdf`}
                                         target="_blank" 
                                         rel="noopener noreferrer"
@@ -511,14 +526,14 @@ const ManageNda = () => {
                         <div className="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center p-4">
                             {selectedSignatureDoc.signedDocumentUrl ? (
                                 <iframe 
-                                    src={`${selectedSignatureDoc.signedDocumentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                                    src={`${getDocumentUrl(selectedSignatureDoc.signedDocumentUrl)}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
                                     title="Signed NDA Document" 
                                     className="w-full h-full border-0 rounded-lg shadow-sm bg-white"
                                 />
                             ) : currentNda.document?.url ? (
                                 (currentNda.document.url.includes('/image/upload/') || currentNda.document.url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) ? (
                                     <div className="relative inline-block">
-                                        <img src={currentNda.document.url} alt="NDA Document" className="max-w-full max-h-[80vh] shadow-sm rounded-lg" />
+                                        <img src={getDocumentUrl(currentNda.document.url)} alt="NDA Document" className="max-w-full max-h-[80vh] shadow-sm rounded-lg" />
                                         <div className="absolute bottom-4 right-4 bg-transparent pointer-events-none">
                                             <img src={selectedSignatureDoc.signatureBase64} alt="Signature" className="h-20 object-contain mix-blend-multiply" />
                                         </div>
@@ -527,7 +542,7 @@ const ManageNda = () => {
                                     <div className="relative w-full h-full">
                                         <p className="text-gray-500 mb-4">Note: This signature was collected before the automatic PDF stamping feature was added.</p>
                                         <iframe 
-                                            src={`https://docs.google.com/gview?url=${encodeURIComponent(currentNda.document.url)}&embedded=true`} 
+                                            src={`https://docs.google.com/gview?url=${encodeURIComponent(getDocumentUrl(currentNda.document.url))}&embedded=true`} 
                                             title="NDA Document" 
                                             className="w-full h-full border-0 rounded-lg shadow-sm bg-white"
                                         />

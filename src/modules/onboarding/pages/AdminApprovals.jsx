@@ -51,6 +51,8 @@ export default function AdminApprovals() {
             setSelectedRequest(null);
             fetchRequests();
         } catch (error) {
+            console.error("Full approval error:", error);
+            console.log("Error Response Data:", error?.response?.data);
             toast.error(error?.response?.data?.message || "Failed to approve");
         } finally {
             setIsApproving(false);

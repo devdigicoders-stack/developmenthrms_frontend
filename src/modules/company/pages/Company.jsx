@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import CrudModal from "../../../Components/CrudModal";
 import { Plus, Pencil, Trash2, Building2, ToggleLeft, ToggleRight, Upload } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
+import { toast } from "react-toastify";
 import {
     fetchAllCompaniesForSuperAdmin, createCompanyWithAdmin,
     updateCompany, deleteCompany, toggleCompanyStatus, uploadCompanyIcon,
@@ -24,6 +25,18 @@ const Company = () => {
             const data = await fetchAllCompaniesForSuperAdmin();
             setCompanies(data.companies || []);
         } catch (err) { console.error(err); }
+    };
+
+    const getImageUrl = (url) => {
+        if (!url) return "";
+        const baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        if (url.startsWith("http://localhost:8008")) {
+            return url.replace("http://localhost:8008", baseUrl);
+        }
+        if (url.startsWith("/")) {
+            return `${baseUrl}${url}`;
+        }
+        return url;
     };
 
     useEffect(() => {
@@ -56,32 +69,43 @@ const Company = () => {
     };
 
     const handleCreate = async (data) => {
-        try { setLoading(true); await createCompanyWithAdmin(data); loadCompanies(); setOpen(false); }
-        catch (err) { loadCompanies(); setOpen(false); }
+        const toastId = toast.loading("Creating company...");
+        try { setLoading(true); await createCompanyWithAdmin(data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company created successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
+        catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to create company.", type: "error", isLoading: false, autoClose: 3000 }); }
         finally { setLoading(false); }
     };
 
     const handleUpdate = async (data) => {
-        try { setLoading(true); await updateCompany(selected._id, data); loadCompanies(); setOpen(false); }
-        catch (err) { console.error(err); }
+        const toastId = toast.loading("Updating company...");
+        try { setLoading(true); await updateCompany(selected._id, data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
+        catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to update company.", type: "error", isLoading: false, autoClose: 3000 }); }
         finally { setLoading(false); }
     };
 
     const handleDelete = async (id) => {
-        try { await deleteCompany(id); loadCompanies(); } catch (err) { console.error(err); }
+        if (!window.confirm("Are you sure you want to delete this company?")) return;
+        const toastId = toast.loading("Deleting company...");
+        try { await deleteCompany(id); await loadCompanies(); toast.update(toastId, { render: "Company deleted successfully!", type: "success", isLoading: false, autoClose: 3000 }); } 
+        catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to delete company.", type: "error", isLoading: false, autoClose: 3000 }); }
     };
 
     const handleToggle = async (id) => {
-        try { await toggleCompanyStatus(id); loadCompanies(); } catch (err) { console.error(err); }
+        const toastId = toast.loading("Updating status...");
+        try { await toggleCompanyStatus(id); await loadCompanies(); toast.update(toastId, { render: "Status updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); } 
+        catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to update status.", type: "error", isLoading: false, autoClose: 3000 }); }
     };
 
     const handleIconUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file || !iconUploadId) return;
+        const toastId = toast.loading("Uploading icon...");
         try {
             await uploadCompanyIcon(iconUploadId, file);
-            loadCompanies();
-        } catch (err) { console.error(err); }
+            await loadCompanies();
+            toast.update(toastId, { render: "Icon uploaded successfully!", type: "success", isLoading: false, autoClose: 3000 });
+        } catch (err) { 
+            toast.update(toastId, { render: err?.response?.data?.message || "Failed to upload icon.", type: "error", isLoading: false, autoClose: 3000 }); 
+        }
         e.target.value = "";
         setIconUploadId(null);
     };
@@ -122,7 +146,7 @@ const Company = () => {
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 overflow-hidden">
                                             {c.icon?.url
-                                                ? <img src={c.icon.url} alt="" className="w-full h-full object-cover" />
+                                                ? <img src={getImageUrl(c.icon.url)} alt="" className="w-full h-full object-cover" />
                                                 : <Building2 size={16} className="text-blue-500" />}
                                         </div>
                                         <div>

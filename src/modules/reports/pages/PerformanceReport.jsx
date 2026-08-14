@@ -33,6 +33,18 @@ const PerformanceReport = () => {
             
             if (dateRange === "custom" && startDate && endDate) {
                 params = { startDate, endDate };
+            } else if (dateRange === "today") {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                params = { startDate: start.toISOString(), endDate: end.toISOString() };
+            } else if (dateRange === "this_week") {
+                const now = new Date();
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+                const start = new Date(now.setDate(diff));
+                start.setHours(0, 0, 0, 0);
+                params = { startDate: start.toISOString(), endDate: new Date().toISOString() };
             } else if (dateRange === "this_month") {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -40,8 +52,12 @@ const PerformanceReport = () => {
             } else if (dateRange === "last_month") {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                const end = new Date(now.getFullYear(), now.getMonth(), 0);
+                const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
                 params = { startDate: start.toISOString(), endDate: end.toISOString() };
+            } else if (dateRange === "this_year") {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), 0, 1);
+                params = { startDate: start.toISOString(), endDate: now.toISOString() };
             }
 
             const res = await api.get(ENDPOINTS.PERFORMANCE.GET, { params });
@@ -114,8 +130,11 @@ const PerformanceReport = () => {
                             onChange={(e) => setDateRange(e.target.value)}
                             className="text-sm focus:outline-none bg-transparent"
                         >
-                            <option value="this_month">This Month</option>
+                            <option value="today">Daily (Today)</option>
+                            <option value="this_week">Weekly (This Week)</option>
+                            <option value="this_month">Monthly (This Month)</option>
                             <option value="last_month">Last Month</option>
+                            <option value="this_year">Yearly (This Year)</option>
                             <option value="all_time">All Time</option>
                             <option value="custom">Custom Range</option>
                         </select>

@@ -29,6 +29,7 @@ const EmployeeProfile = () => {
     const [leaveData, setLeaveData] = useState([]);
     const [attendanceData, setAttendanceData] = useState([]);
     const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, late: 0 });
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
     const [onboardingData, setOnboardingData] = useState(null);
 
     // Projects State
@@ -96,6 +97,7 @@ const EmployeeProfile = () => {
                         
                         // Fallback to 0 if no records found this month
                         setAttendanceSummary({ present, absent, late });
+                        setAttendanceRecords(attRes && attRes.data ? attRes.data.filter(a => a.employee?._id === id || a.employee === id) : []);
                         setAttendanceData([
                             { name: "Present", value: present, color: "#22c55e" },
                             { name: "Absent", value: absent, color: "#ef4444" },
@@ -464,6 +466,68 @@ const EmployeeProfile = () => {
                                     <span className="text-gray-600 font-medium">Absent</span>
                                     <span className="text-red-500 font-bold text-lg">{attendanceSummary.absent}</span>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        {/* Attendance Detailed Table */}
+                        <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm mt-6 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-gray-800">Daily Attendance Log</h3>
+                                <span className="text-sm text-gray-500 font-medium">Current Month</span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            <th className="p-4">Date</th>
+                                            <th className="p-4">Check In</th>
+                                            <th className="p-4">Check Out</th>
+                                            <th className="p-4">Shift</th>
+                                            <th className="p-4">Hours</th>
+                                            <th className="p-4">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {attendanceRecords.length > 0 ? attendanceRecords.map((record, idx) => (
+                                            <tr key={record._id || idx} className="hover:bg-gray-50 transition">
+                                                <td className="p-4">
+                                                    <span className="font-medium text-gray-900">
+                                                        {record.date ? new Date(record.date).toLocaleDateString("en-US", { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="text-sm font-medium text-green-600">{record.punchIn || record.checkIn || "—"}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="text-sm font-medium text-rose-500">{record.punchOut || record.checkOut || "—"}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-medium">
+                                                        {record.shift || "Work From Home"}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-sm text-gray-600">
+                                                    {record.workingHours || record.hours || "—"}
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                                        record.status === "Present" ? "bg-green-100 text-green-700" :
+                                                        record.status === "Absent" ? "bg-red-100 text-red-700" :
+                                                        "bg-yellow-100 text-yellow-700"
+                                                    }`}>
+                                                        {record.status} {record.isLate ? "(Late)" : ""}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="6" className="p-8 text-center text-gray-500 italic">
+                                                    No attendance records found for this month.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

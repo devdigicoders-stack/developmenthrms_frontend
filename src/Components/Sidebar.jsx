@@ -4,7 +4,7 @@ import { useStore } from "../context/StoreContext";
 import {
     LayoutDashboard, Users, Building2, FolderKanban, ShieldCheck,
     Settings, UserCircle, LogOut, ChevronLeft, Menu, Calendar, IndianRupee, Clock, X, Bell, Briefcase, Palmtree, CalendarDays, UserCheck, FileText, Kanban, TrendingUp, Receipt, AlertCircle, PieChart, Monitor, Laptop, BarChart2,
-    ChevronDown, ChevronRight, CheckCircle, Timer, Banknote, PartyPopper
+    ChevronDown, ChevronRight, CheckCircle, Timer, Banknote, PartyPopper, HardDrive
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import { authlogout } from "../modules/auth/services/authService";
@@ -97,6 +97,7 @@ const NAV = [
         groupIcon: Settings,
         items: [
             { name: "General Settings", icon: Settings, path: "/settings", permissions: [] },
+            { name: "Asset Types", icon: HardDrive, path: "/settings/asset-types", permissions: ["VIEW_ASSET_TYPE", "MANAGE_ASSET_TYPE"] },
             { name: "Role Based Access", icon: ShieldCheck, path: "/settings/roles", permissions: ["VIEW_ROLE", "VIEW_ALL_ROLES"] },
             { name: "Departments", icon: FolderKanban, path: "/departments", permissions: ["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"] },
             { name: "Companies", icon: Building2, path: "/companies", superAdminOnly: true },

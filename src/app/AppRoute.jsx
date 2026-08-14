@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "../Pages/Home";
 import Settings from "../Pages/Settings";
+import AssetTypes from "../modules/assets/pages/AssetTypes";
 import Profile from "../Pages/Profile";
 import WebLayout from "../layout/WebLayout";
 import Login from "../modules/auth/pages/Login";
@@ -120,6 +121,7 @@ const AppRoute = createBrowserRouter([
             { path: "/manage-payments", element: <ManagePayments /> },
             { path: "/notifications", element: <Notifications /> },
             { path: "/settings", element: <Settings /> },
+            { path: "/settings/asset-types", element: <AssetTypes /> },
             { path: "/settings/roles", element: <Role /> },
             { path: "/settings/companies", element: <Company/> },
             { path: "/settings/user", element: <User/> },

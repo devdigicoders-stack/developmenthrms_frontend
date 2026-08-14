@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
     Building2, ShieldCheck, Users, Pencil, X, Check,
     Upload, Globe, MapPin, Calendar, User, ArrowRight,
-    TrendingUp, Receipt,
+    TrendingUp, Receipt, HardDrive,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../context/StoreContext";
@@ -215,6 +215,14 @@ const QUICK_LINKS = [
         icon: Receipt,
         color: "bg-indigo-50 text-indigo-600",
         perms: ["VIEW_QUOTE", "VIEW_ALL_QUOTES"],
+    },
+    {
+        title: "Asset Types",
+        description: "Manage dynamic asset types for hardware and software.",
+        path: "/settings/asset-types",
+        icon: HardDrive,
+        color: "bg-teal-50 text-teal-600",
+        perms: ["VIEW_ASSET_TYPE", "MANAGE_ASSET_TYPE"],
     },
 ];
 

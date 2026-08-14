@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { assetService } from '../../../services/assetService';
+import { assetTypeService } from '../../../services/assetTypeService';
 import { ENDPOINTS } from '../../../services/endpoints';
 import api from '../../../services/axios';
 import { Plus, Edit, Trash2, UserPlus, UserMinus } from 'lucide-react';
@@ -10,6 +11,7 @@ import CrudModal from '../../../Components/CrudModal';
 const Assets = () => {
     const [assets, setAssets] = useState([]);
     const [users, setUsers] = useState([]);
+    const [assetTypes, setAssetTypes] = useState([]);
     const [loading, setLoading] = useState(false);
     
     // Modal states
@@ -21,7 +23,17 @@ const Assets = () => {
     useEffect(() => {
         fetchAssets();
         fetchUsers();
+        fetchAssetTypes();
     }, []);
+
+    const fetchAssetTypes = async () => {
+        try {
+            const res = await assetTypeService.getAssetTypes();
+            if (res.success) setAssetTypes(res.assetTypes || []);
+        } catch (error) {
+            console.error('Failed to fetch asset types', error);
+        }
+    };
 
     const fetchAssets = async () => {
         setLoading(true);
@@ -253,16 +265,7 @@ const Assets = () => {
                         name: "type", 
                         label: "Asset Type", 
                         type: "select", 
-                        options: [
-                            { value: 'Laptop', label: 'Laptop' },
-                            { value: 'Monitor', label: 'Monitor' },
-                            { value: 'Mobile', label: 'Mobile Phone' },
-                            { value: 'Tablet', label: 'Tablet' },
-                            { value: 'Keyboard', label: 'Keyboard' },
-                            { value: 'Mouse', label: 'Mouse' },
-                            { value: 'Software', label: 'Software License' },
-                            { value: 'Other', label: 'Other Hardware' }
-                        ]
+                        options: assetTypes.map(t => ({ value: t.name, label: t.name }))
                     },
                     { name: "serialNumber", label: "Serial Number / IMEI", type: "text" },
                     { name: "description", label: "Description / Notes", type: "text", fullWidth: true }

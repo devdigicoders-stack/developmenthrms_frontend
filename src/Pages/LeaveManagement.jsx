@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../context/StoreContext";
 import { Calendar, Clock, FileText, Users, TrendingUp, Plus, Check, XCircle, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
@@ -134,7 +134,7 @@ const MyLeavesTab = ({ year }) => {
                                         </p>
                                     )}
                                 </div>
-                                {["pending", "approved"].includes(leave.status) && (
+                                {leave.status === "pending" && (
                                     <button onClick={() => handleCancel(leave._id)}
                                         className="shrink-0 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition">
                                         Cancel

@@ -46,6 +46,8 @@ export default function OfferLetter() {
             link.remove();
             toast.update(toastId, { render: "PDF Downloaded successfully!", type: "success", isLoading: false, autoClose: 3000 });
         } catch (error) {
+            console.error("Download Offer Letter Error:", error);
+            console.log("Error Response:", error?.response);
             toast.update(toastId, { render: "Failed to download PDF", type: "error", isLoading: false, autoClose: 3000 });
         }
     };

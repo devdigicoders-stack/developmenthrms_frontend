@@ -3,7 +3,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
   withCredentials: true,
-  timeout: 10000
+  timeout: 60000
 });
 
 // Auto-logout on 401 (expired/invalid token)

@@ -33,14 +33,21 @@ const ViewNda = () => {
 
     const getDocumentUrl = (url) => {
         if (!url) return "";
-        const baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        let baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        
+        let finalUrl = url;
         if (url.startsWith("http://localhost:8008")) {
-            return url.replace("http://localhost:8008", baseUrl);
+            finalUrl = url.replace("http://localhost:8008", baseUrl);
+        } else if (url.startsWith("/")) {
+            finalUrl = `${baseUrl}${url}`;
         }
-        if (url.startsWith("/")) {
-            return `${baseUrl}${url}`;
+        
+        // Force HTTPS if it's hitting the live Render backend
+        if (finalUrl.includes('onrender.com') && finalUrl.startsWith('http://')) {
+            finalUrl = finalUrl.replace('http://', 'https://');
         }
-        return url;
+        
+        return finalUrl;
     };
 
     const fetchData = async () => {

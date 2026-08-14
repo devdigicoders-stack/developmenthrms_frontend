@@ -31,6 +31,18 @@ const ViewNda = () => {
         fetchData();
     }, [user?.companyId]);
 
+    const getDocumentUrl = (url) => {
+        if (!url) return "";
+        const baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        if (url.startsWith("http://localhost:8008")) {
+            return url.replace("http://localhost:8008", baseUrl);
+        }
+        if (url.startsWith("/")) {
+            return `${baseUrl}${url}`;
+        }
+        return url;
+    };
+
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -176,10 +188,10 @@ const ViewNda = () => {
                                         <div className="p-6 md:p-8 flex-1 overflow-y-auto max-h-[500px] bg-gray-50 flex flex-col items-center justify-center">
                                             {selectedNda.document?.url ? (
                                                 selectedNda.document.url.includes('/image/upload/') || selectedNda.document.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                                                    <img src={selectedNda.document.url} alt="NDA Document" className="max-w-full shadow-sm rounded-lg border border-gray-200" />
+                                                    <img src={getDocumentUrl(selectedNda.document.url)} alt="NDA Document" className="max-w-full shadow-sm rounded-lg border border-gray-200" />
                                                 ) : (
                                                     <iframe 
-                                                        src={`${selectedNda.document.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                                                        src={`${getDocumentUrl(selectedNda.document.url)}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
                                                         title="NDA Document" 
                                                         className="w-full h-full min-h-[600px] border border-gray-200 rounded-lg shadow-sm bg-white"
                                                     />

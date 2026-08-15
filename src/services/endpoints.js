@@ -212,6 +212,7 @@ export const ENDPOINTS = {
   },
 
   MEETING: {
+    GET_ALL: `/api/meetings/all`,
     CREATE: `/api/meetings`,
     BY_LEAD: (leadId) => `/api/meetings/lead/${leadId}`,
     UPDATE: (id) => `/api/meetings/${id}`,

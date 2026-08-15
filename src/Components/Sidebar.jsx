@@ -35,6 +35,7 @@ const NAV = [
             { name: "Projects", icon: Kanban, path: "/projects", permissions: ["VIEW_PROJECT", "VIEW_ALL_PROJECTS"] },
             { name: "Clients", icon: Users, path: "/clients", permissions: ["VIEW_ALL_PROJECTS"] },
             { name: "Leads", icon: TrendingUp, path: "/leads", permissions: ["VIEW_LEAD", "VIEW_ALL_LEADS"] },
+            { name: "Meetings", icon: CalendarDays, path: "/meetings", permissions: ["VIEW_MEETING", "VIEW_ALL_MEETINGS"] },
             { name: "Quotes", icon: Receipt, path: "/quotes", permissions: ["VIEW_QUOTE", "VIEW_ALL_QUOTES"] },
         ],
     },

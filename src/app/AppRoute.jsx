@@ -24,6 +24,7 @@ import Payroll from "../modules/payroll/pages/Payroll";
 import Projects from "../modules/projects/pages/Projects";
 import ProjectDetail from "../modules/projects/pages/ProjectDetail";
 import Leads from "../modules/leads/pages/Leads";
+import Meetings from "../modules/meetings/pages/Meetings";
 import QuoteManagement from "../modules/quotes/pages/QuoteManagement";
 import PaymentAccounts from "../modules/quotes/pages/PaymentAccounts";
 import Policies from "../modules/policies/pages/Policies";
@@ -103,6 +104,7 @@ const AppRoute = createBrowserRouter([
             { path: "/projects", element: <Projects /> },
             { path: "/projects/:id", element: <ProjectDetail /> },
             { path: "/leads", element: <Leads /> },
+            { path: "/meetings", element: <Meetings /> },
             { path: "/quotes", element: <QuoteManagement /> },
             { path: "/payment-accounts", element: <PaymentAccounts /> },
             { path: "/policies", element: <Policies /> },

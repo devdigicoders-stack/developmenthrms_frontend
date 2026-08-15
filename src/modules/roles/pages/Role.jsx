@@ -227,10 +227,16 @@ const Role = () => {
     const loadPermissions = async () => {
         try {
             const res = await fetchPermissionGroups();
-            setPermissionGroups(Object.entries(res.data).map(([module, perms]) => ({
-                module,
-                permissions: Object.values(perms),
-            })));
+            setPermissionGroups(Object.entries(res.data).map(([module, perms]) => {
+                let modulePerms = Object.values(perms);
+                if (!isSuperAdmin) {
+                    modulePerms = modulePerms.filter(p => permissions.includes(p));
+                }
+                return {
+                    module,
+                    permissions: modulePerms,
+                };
+            }).filter(g => g.permissions.length > 0));
         } catch (err) { console.error(err); }
     };
 

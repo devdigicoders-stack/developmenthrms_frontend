@@ -12,6 +12,9 @@ const ClientNdaPage = ({ inPanel = false }) => {
     const [loading, setLoading] = useState(true);
     const [templateUrl, setTemplateUrl] = useState("");
     const [showSignaturePad, setShowSignaturePad] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [signatureData, setSignatureData] = useState(null);
     const sigCanvas = useRef({});
 
     useEffect(() => {
@@ -69,19 +72,43 @@ const ClientNdaPage = ({ inPanel = false }) => {
 
         try {
             setLoading(true);
-            const signatureBase64 = sigCanvas.current.getCanvas().toDataURL("image/png");
+            const base64Data = sigCanvas.current.getCanvas().toDataURL("image/png");
+            setSignatureData(base64Data);
             
-            const response = await api.post("/api/nda/client/sign", { signatureBase64 });
+            const response = await api.post("/api/nda/client/send-otp");
+            if (response.data.success) {
+                toast.success(response.data.message || "OTP sent to your email");
+                setShowSignaturePad(false);
+                setShowOtpModal(true);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyAndSubmitSignature = async () => {
+        if (!otp || otp.length < 6) {
+            return toast.error("Please enter a valid OTP");
+        }
+
+        try {
+            setLoading(true);
+            const signatureBase64 = signatureData;
+            
+            const response = await api.post("/api/nda/client/sign", { signatureBase64, otp });
             if (response.data.success) {
                 toast.success("NDA Signed Successfully!");
                 setUser({ ...user, clientNdaStatus: "signed" });
+                setShowOtpModal(false);
                 navigate("/");
             }
         } catch (error) {
             console.error("FULL ERROR DETAILS:", error);
             console.error("ERROR RESPONSE:", error.response);
             
-            toast.error(error.response?.data?.message || "Failed to sign NDA");
+            toast.error(error.response?.data?.message || "Failed to sign NDA or Invalid OTP");
         } finally {
             setLoading(false);
         }
@@ -182,7 +209,42 @@ const ClientNdaPage = ({ inPanel = false }) => {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                        ) : "Confirm & Submit"}
+                                        ) : "Send OTP"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* OTP Modal */}
+                    {showOtpModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 transition-all">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm relative animate-fade-in-up">
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">Verify Signature</h3>
+                                <p className="text-sm text-gray-500 text-center mb-6">Enter the 6-digit code sent to your email to confirm your signature.</p>
+                                
+                                <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    placeholder="Enter OTP"
+                                    maxLength="6"
+                                    className="w-full text-center text-2xl tracking-widest px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
+                                />
+                                
+                                <div className="flex gap-3 w-full">
+                                    <button 
+                                        onClick={() => setShowOtpModal(false)}
+                                        className="flex-1 px-5 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 hover:bg-gray-100 rounded-md transition-colors font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={verifyAndSubmitSignature}
+                                        disabled={loading}
+                                        className="flex-1 px-6 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow transition-colors font-medium flex items-center justify-center"
+                                    >
+                                        {loading ? "Verifying..." : "Verify & Submit"}
                                     </button>
                                 </div>
                             </div>

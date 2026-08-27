@@ -41,3 +41,34 @@ export const verifyToken = async () => {
     const res = await api.get(ENDPOINTS.AUTH.VERIFY_TOKEN);
     return res.data;
 };
+
+// ─── Bank & UPI Details ───
+export const getMyBankDetails = async () => {
+    const res = await api.get("/api/user/bank-details");
+    return res.data;
+};
+
+export const submitBankDetails = async (formData) => {
+    const res = await api.put("/api/user/bank-details", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+    return res.data;
+};
+
+export const approveBankDetails = async (userId) => {
+    const res = await api.patch(`/api/user/${userId}/bank-details/approve`);
+    return res.data;
+};
+
+export const rejectBankDetails = async (userId, reason) => {
+    const res = await api.patch(`/api/user/${userId}/bank-details/reject`, { reason });
+    return res.data;
+};
+
+export const adminEditBankDetails = async (userId, formData) => {
+    const res = await api.put(`/api/user/${userId}/bank-details/admin-edit`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+    return res.data;
+};
+

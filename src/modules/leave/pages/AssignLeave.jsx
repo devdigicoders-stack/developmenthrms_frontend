@@ -20,19 +20,41 @@ const AssignLeave = () => {
     const [tab, setTab]             = useState("individual");
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [employees, setEmployees]   = useState([]);
+    const [companies, setCompanies]   = useState([]);
     const [loading, setLoading]       = useState(false);
 
     // Individual form
-    const [indForm, setIndForm] = useState({ userId: "", leaveTypeId: "", allocated: "", year: new Date().getFullYear() });
+    const [indForm, setIndForm] = useState({ userId: "", leaveTypeId: "", allocated: "", year: new Date().getFullYear(), companyId: "" });
     const [userBalance, setUserBalance] = useState([]);
 
     // Bulk form
-    const [bulkForm, setBulkForm] = useState({ leaveTypeId: "", allocated: "", year: new Date().getFullYear() });
+    const [bulkForm, setBulkForm] = useState({ leaveTypeId: "", allocated: "", year: new Date().getFullYear(), companyId: "" });
 
     useEffect(() => {
         getLeaveTypes().then(d => setLeaveTypes(d.leaveTypes || [])).catch(() => {});
-        api.get(ENDPOINTS.USER.GET_ALL).then(r => setEmployees(r.data.users || [])).catch(() => {});
-    }, []);
+        if (isSuperAdmin) {
+            api.get(ENDPOINTS.COMPANY.GET_ALL_COMPANIES).then(r => setCompanies(r.data.companies || r.data || [])).catch(() => {});
+        } else {
+            api.get(ENDPOINTS.USER.GET_ALL).then(r => setEmployees(r.data.users || [])).catch(() => {});
+        }
+    }, [isSuperAdmin]);
+
+    const handleCompanyChange = (e, formType) => {
+        const cId = e.target.value;
+        if (formType === "ind") {
+            setIndForm(f => ({ ...f, companyId: cId, userId: "" }));
+        } else {
+            setBulkForm(f => ({ ...f, companyId: cId }));
+        }
+        
+        if (cId) {
+            api.get(ENDPOINTS.USER.GET_ALL_BY_COMPANY(cId))
+                .then(r => setEmployees(r.data.users || r.data || []))
+                .catch(() => setEmployees([]));
+        } else {
+            setEmployees([]);
+        }
+    };
 
     const setInd = (k, v) => setIndForm(f => ({ ...f, [k]: v }));
     const setBulk = (k, v) => setBulkForm(f => ({ ...f, [k]: v }));
@@ -47,7 +69,7 @@ const AssignLeave = () => {
 
     const handleIndividual = async (e) => {
         e.preventDefault();
-        if (!indForm.userId || !indForm.leaveTypeId || !indForm.allocated)
+        if (!indForm.userId || !indForm.leaveTypeId || !indForm.allocated || (isSuperAdmin && !indForm.companyId))
             return toast.error("All fields are required");
         try {
             setLoading(true);
@@ -61,7 +83,7 @@ const AssignLeave = () => {
 
     const handleBulk = async (e) => {
         e.preventDefault();
-        if (!bulkForm.leaveTypeId || !bulkForm.allocated)
+        if (!bulkForm.leaveTypeId || !bulkForm.allocated || (isSuperAdmin && !bulkForm.companyId))
             return toast.error("All fields are required");
         if (!window.confirm(`Assign ${bulkForm.allocated} days to ALL active employees?`)) return;
         try {
@@ -111,6 +133,17 @@ const AssignLeave = () => {
                     <div className="bg-white border border-gray-200 rounded-xl p-6">
                         <h2 className="text-base font-semibold text-gray-900 mb-4">Assign to Employee</h2>
                         <form onSubmit={handleIndividual} className="space-y-4">
+                            {isSuperAdmin && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Company</label>
+                                    <select value={indForm.companyId} onChange={e => handleCompanyChange(e, "ind")} className={inputCls}>
+                                        <option value="">Select company</option>
+                                        {companies.map(c => (
+                                            <option key={c._id} value={c._id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Employee</label>
                                 <select value={indForm.userId}
@@ -189,6 +222,17 @@ const AssignLeave = () => {
                         <h2 className="text-base font-semibold text-gray-900 mb-1">Bulk Assign to All Employees</h2>
                         <p className="text-xs text-gray-400 mb-4">This will assign leave balance to all active employees in your company.</p>
                         <form onSubmit={handleBulk} className="space-y-4">
+                            {isSuperAdmin && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Company</label>
+                                    <select value={bulkForm.companyId} onChange={e => handleCompanyChange(e, "bulk")} className={inputCls}>
+                                        <option value="">Select company</option>
+                                        {companies.map(c => (
+                                            <option key={c._id} value={c._id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Leave Type</label>
                                 <select value={bulkForm.leaveTypeId} onChange={e => setBulk("leaveTypeId", e.target.value)} className={inputCls}>

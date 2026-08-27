@@ -115,7 +115,7 @@ const Login = () => {
             <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">HR</div>
-                    <span className="text-white font-bold text-xl tracking-tight">HRMS</span>
+                    <span className="text-white font-bold text-xl tracking-tight">DigiCoders Workastra</span>
                 </div>
                 <div>
                     <h2 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -125,7 +125,7 @@ const Login = () => {
                         A complete HR platform for managing employees, roles, departments, attendance, and payroll — all in one place.
                     </p>
                 </div>
-                <p className="text-slate-600 text-sm">&copy; {new Date().getFullYear()} HRMS. All rights reserved.</p>
+                <p className="text-slate-600 text-sm">&copy; {new Date().getFullYear()} DigiCoders Workastra. All rights reserved.</p>
             </div>
 
             {/* Right Panel */}
@@ -137,7 +137,7 @@ const Login = () => {
                         <>
                             <div className="mb-8">
                                 <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-                                <p className="text-gray-500 text-sm mt-1">Sign in to your HRMS account</p>
+                                <p className="text-gray-500 text-sm mt-1">Sign in to your DigiCoders Workastra account</p>
                             </div>
 
                             <form onSubmit={handleLogin} className="space-y-4">

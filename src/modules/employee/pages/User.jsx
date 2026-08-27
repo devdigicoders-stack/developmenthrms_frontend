@@ -345,7 +345,8 @@ const User = () => {
                             <th className="px-4 py-3 text-left">Contact</th>
                             <th className="px-4 py-3 text-left">Manager</th>
                             <th className="px-4 py-3 text-left">Emp. Status</th>
-                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Bank Status</th>
+                            <th className="px-4 py-3 text-left">Acc. Status</th>
                             <th className="px-4 py-3 text-left">Created By</th>
                             <th className="px-4 py-3 text-center">Actions</th>
                         </tr>
@@ -399,6 +400,16 @@ const User = () => {
                                         {u.employmentStatus?.name
                                             ? <span className="inline-block text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-700">{u.employmentStatus.name}</span>
                                             : <span className="text-xs text-gray-400">—</span>}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                                            u.bankStatus === "approved" ? "bg-green-50 text-green-700" :
+                                            u.bankStatus === "pending" ? "bg-yellow-50 text-yellow-700" :
+                                            u.bankStatus === "rejected" ? "bg-red-50 text-red-600" :
+                                            "bg-gray-100 text-gray-500"
+                                        }`}>
+                                            {u.bankStatus ? u.bankStatus.charAt(0).toUpperCase() + u.bankStatus.slice(1) : "Not Uploaded"}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${u.isActive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-500"}`}>

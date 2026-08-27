@@ -21,6 +21,7 @@ import AssignLeave from "../modules/leave/pages/AssignLeave";
 import Holiday from "../modules/leave/pages/Holiday";
 import LeaveType from "../modules/leave/pages/LeaveType";
 import Payroll from "../modules/payroll/pages/Payroll";
+import PenaltyDates from "../modules/payroll/pages/PenaltyDates";
 import Projects from "../modules/projects/pages/Projects";
 import ProjectDetail from "../modules/projects/pages/ProjectDetail";
 import Leads from "../modules/leads/pages/Leads";
@@ -57,6 +58,7 @@ import Assets from "../modules/assets/pages/Assets";
 import MyAssets from "../modules/assets/pages/MyAssets";
 import MyResignation from "../modules/exit/pages/MyResignation";
 import ManageResignations from "../modules/exit/pages/ManageResignations";
+import ViewResignation from "../modules/exit/pages/ViewResignation";
 import Placeholder from "../Pages/Placeholder";
 
 const AppRoute = createBrowserRouter([
@@ -101,6 +103,7 @@ const AppRoute = createBrowserRouter([
             { path: "/leave/holidays",     element: <Holiday /> },
             { path: "/leave/types",         element: <LeaveType /> },
             { path: "/payroll", element: <Payroll /> },
+            { path: "/payroll/penalty-dates", element: <PenaltyDates /> },
             { path: "/projects", element: <Projects /> },
             { path: "/projects/:id", element: <ProjectDetail /> },
             { path: "/leads", element: <Leads /> },
@@ -119,6 +122,7 @@ const AppRoute = createBrowserRouter([
             { path: "/my-assets", element: <MyAssets /> },
             { path: "/my-resignation", element: <MyResignation /> },
             { path: "/manage-resignations", element: <ManageResignations /> },
+            { path: "/manage-resignations/view", element: <ViewResignation /> },
             { path: "/submit-payment", element: <SubmitPayment /> },
             { path: "/manage-payments", element: <ManagePayments /> },
             { path: "/notifications", element: <Notifications /> },
@@ -132,7 +136,7 @@ const AppRoute = createBrowserRouter([
 
             { path: "/biometric", element: <Placeholder /> },
             { path: "/attendance-rules", element: <Placeholder /> },
-            { path: "/dept-reports", element: <Placeholder /> },
+            // { path: "/dept-reports", element: <Placeholder /> },
             { path: "*", element: <Home /> }
         ]
     },

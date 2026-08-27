@@ -26,7 +26,7 @@ const Navbar = ({ onMenuClick }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
-    const pageTitle = ROUTE_LABELS[location.pathname] || "HRMS";
+    const pageTitle = ROUTE_LABELS[location.pathname] || "DigiCoders Workastra";
     const handleLogout = () => { authlogout(); logout(); navigate("/auth/login"); };
 
     useEffect(() => {
@@ -53,7 +53,7 @@ const Navbar = ({ onMenuClick }) => {
                     )}
                     <div>
                         <h1 className="text-base font-semibold text-gray-800">{pageTitle}</h1>
-                        <p className="text-xs text-gray-400 hidden sm:block">{user?.companyId?.name || "HRMS Platform"}</p>
+                        <p className="text-xs text-gray-400 hidden sm:block">{user?.companyId?.name || "DigiCoders Workastra Platform"}</p>
                     </div>
                 </div>
             </div>

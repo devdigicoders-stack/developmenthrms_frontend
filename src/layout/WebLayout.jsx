@@ -4,6 +4,7 @@ import Sidebar from "../Components/Sidebar";
 import Navbar from "../Components/Navbar";
 import { useStore } from "../context/StoreContext";
 import { requestForToken, onMessageListener } from "../firebase";
+import WishesModal from "../Components/WishesModal";
 import { saveFcmTokenToBackend } from "../services/fcmService";
 import { toast } from "react-toastify";
 
@@ -25,16 +26,16 @@ function WebLayout() {
     if (!user) return <Navigate to="/auth/login" replace />;
 
     // Intercept users who haven't completed onboarding
-    const roleName = user?.role?.name?.toLowerCase();
+    const roleName = user?.role?.name?.toLowerCase()?.trim();
     
-    if (roleName === "client" && user?.clientNdaStatus === "pending") {
+    if (roleName === "client" && (!user?.clientNdaStatus || user?.clientNdaStatus === "pending")) {
         return <Navigate to="/client-nda" replace />;
     }
 
     const skipOnboarding = roleName === "super_admin" || roleName === "admin" || roleName === "client";
     
     if (!skipOnboarding) {
-        if (user.onboardingStatus === "pending_form") {
+        if (user.onboardingStatus === "pending_form" || user.onboardingStatus === "rejected") {
             return <Navigate to="/onboarding" replace />;
         }
         if (user.onboardingStatus === "pending_approval") {
@@ -51,6 +52,7 @@ function WebLayout() {
                     <Outlet />
                 </div>
             </main>
+            <WishesModal user={user} />
         </div>
     );
 }

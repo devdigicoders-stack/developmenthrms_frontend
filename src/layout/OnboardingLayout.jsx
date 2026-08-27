@@ -29,7 +29,7 @@ function OnboardingLayout() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm z-10">
                 <div className="w-20"></div> {/* spacer for centering */}
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Workastra HRMS</h1>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Workastra</h1>
                 <button 
                     onClick={handleLogout} 
                     className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 transition"

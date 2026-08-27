@@ -33,6 +33,8 @@ export default function OnboardingForm() {
         phone: user?.phone || "",
         alternateMobile: "",
         dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "",
+        isDobDifferent: false,
+        aadharDateOfBirth: "",
         gender: user?.gender || "",
         linkedInProfile: "",
         permanentAddress: "",
@@ -55,7 +57,19 @@ export default function OnboardingForm() {
 
     const [files, setFiles] = useState({});
 
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        let newValue = value;
+
+        // Validation for specific fields
+        if (name === "firstName" || name === "lastName") {
+            newValue = value.replace(/[^a-zA-Z\s]/g, ""); // Allow only alphabets and spaces
+        } else if (name === "phone" || name === "alternateMobile") {
+            newValue = value.replace(/[^0-9]/g, "").slice(0, 10); // Allow only numbers and max 10 digits
+        }
+
+        setFormData({ ...formData, [name]: newValue });
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -71,8 +85,18 @@ export default function OnboardingForm() {
 
     const handleNestedChange = (category, index, field, value) => {
         const newData = { ...formData };
-        if (index !== null) newData[category][index][field] = value;
-        else newData[category][field] = value;
+        let newValue = value;
+
+        // Validation for nested fields
+        if (["name", "relation", "designation", "hrName"].includes(field)) {
+            newValue = value.replace(/[^a-zA-Z\s]/g, ""); // Allow only alphabets and spaces
+        } else if (["mobile", "phone", "hrContact"].includes(field)) {
+            newValue = value.replace(/[^0-9]/g, "").slice(0, 10); // Allow only numbers and max 10 digits
+        }
+
+        if (index !== null) newData[category][index][field] = newValue;
+        else newData[category][field] = newValue;
+        
         setFormData(newData);
     };
 
@@ -134,6 +158,19 @@ export default function OnboardingForm() {
                     </p>
                 </div>
 
+                {/* Rejected Alert */}
+                {user?.onboardingStatus === "rejected" && (
+                    <div className="bg-red-50 text-red-700 p-5 rounded-2xl border border-red-200 mb-8 flex items-start sm:items-center gap-4 animate-in fade-in zoom-in duration-500 shadow-sm">
+                        <div className="p-2 bg-red-100 rounded-full shrink-0 mt-1 sm:mt-0">
+                            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        </div>
+                        <div>
+                            <p className="font-bold text-red-800 text-lg">Onboarding Rejected</p>
+                            <p className="text-sm mt-0.5 opacity-90">Your previous submission was rejected by the administration. Please review your details and re-submit the form.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Form Container */}
                 <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
                     
@@ -177,9 +214,30 @@ export default function OnboardingForm() {
                                         <InputField label="Email ID" required><input required type="email" name="email" value={formData.email} onChange={handleChange} className={inputClasses} placeholder="john.doe@example.com"/></InputField>
                                         <InputField label="First Name" required><input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className={inputClasses} placeholder="John"/></InputField>
                                         <InputField label="Last Name" required><input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className={inputClasses} placeholder="Doe"/></InputField>
-                                        <InputField label="Mobile Number" required><input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className={inputClasses} placeholder="+91 9876543210"/></InputField>
-                                        <InputField label="Alternate Mobile"><input type="tel" name="alternateMobile" value={formData.alternateMobile} onChange={handleChange} className={inputClasses} placeholder="Optional"/></InputField>
-                                        <InputField label="Date Of Birth" required><input required type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className={inputClasses} /></InputField>
+                                        <InputField label="Mobile Number" required><input required type="tel" minLength={10} maxLength={10} name="phone" value={formData.phone} onChange={handleChange} className={inputClasses} placeholder="e.g. 9876543210"/></InputField>
+                                        <InputField label="Alternate Mobile"><input type="tel" minLength={10} maxLength={10} name="alternateMobile" value={formData.alternateMobile} onChange={handleChange} className={inputClasses} placeholder="Optional"/></InputField>
+                                        
+                                        <div className="md:col-span-2 space-y-4 border border-gray-200 p-5 rounded-2xl bg-white shadow-sm">
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" name="isDobDifferent" checked={formData.isDobDifferent} onChange={(e) => setFormData({ ...formData, isDobDifferent: e.target.checked })} className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                                                <span className="text-sm font-semibold text-gray-800">Is your Real Date of Birth different from your Aadhar Card Date of Birth?</span>
+                                            </label>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                <InputField label={formData.isDobDifferent ? "Real Date Of Birth" : "Date Of Birth (As per Aadhar)"} required>
+                                                    <input required type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className={inputClasses} />
+                                                </InputField>
+                                                
+                                                {formData.isDobDifferent && (
+                                                    <div className="animate-in fade-in zoom-in duration-300">
+                                                        <InputField label="Aadhar Card Date Of Birth" required>
+                                                            <input required type="date" name="aadharDateOfBirth" value={formData.aadharDateOfBirth} onChange={handleChange} className={inputClasses} />
+                                                        </InputField>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         <InputField label="Gender" required>
                                             <select required name="gender" value={formData.gender} onChange={handleChange} className={`${inputClasses} appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6%209L12%2015L18%209%22%20stroke%3D%22%23000000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-12px)_center] bg-[size:16px]`}>
                                                 <option value="" disabled>Select Gender</option><option value="male">Male</option><option value="female">Female</option>
@@ -213,7 +271,7 @@ export default function OnboardingForm() {
                                         {[
                                             { name: "cvFile", label: "Latest Resume / CV", req: true },
                                             { name: "aadharFront", label: "Aadhar Card (Front)", req: true },
-                                            { name: "aadharBack", label: "Aadhar Card (Back)", req: false },
+                                            { name: "aadharBack", label: "Aadhar Card (Back)", req: true },
                                             { name: "panCard", label: "PAN Card", req: true },
                                             { name: "bankPassbook", label: "Bank Account Passbook/Cheque", req: true },
                                             { name: "highSchoolCertificate", label: "High School (10th) Marksheet", req: true },
@@ -261,7 +319,7 @@ export default function OnboardingForm() {
                                                 <div key={`personal-${idx}`} className="space-y-5 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                                                     <h4 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Reference {idx + 1}</h4>
                                                     <InputField label="Name" required><input required type="text" value={formData.personalReferences[idx].name} onChange={(e) => handleNestedChange("personalReferences", idx, "name", e.target.value)} className={inputClasses} /></InputField>
-                                                    <InputField label="Mobile" required><input required type="tel" value={formData.personalReferences[idx].mobile} onChange={(e) => handleNestedChange("personalReferences", idx, "mobile", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Mobile" required><input required type="tel" minLength={10} maxLength={10} value={formData.personalReferences[idx].mobile} onChange={(e) => handleNestedChange("personalReferences", idx, "mobile", e.target.value)} className={inputClasses} placeholder="e.g. 9876543210" /></InputField>
                                                     <InputField label="Relation" required><input required type="text" value={formData.personalReferences[idx].relation} onChange={(e) => handleNestedChange("personalReferences", idx, "relation", e.target.value)} className={inputClasses} /></InputField>
                                                 </div>
                                             ))}
@@ -278,7 +336,7 @@ export default function OnboardingForm() {
                                                 <div key={`prof-${idx}`} className="space-y-5 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                                                     <h4 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Reference {idx + 1}</h4>
                                                     <InputField label="Name" required><input required type="text" value={formData.professionalReferences[idx].name} onChange={(e) => handleNestedChange("professionalReferences", idx, "name", e.target.value)} className={inputClasses} /></InputField>
-                                                    <InputField label="Mobile" required><input required type="tel" value={formData.professionalReferences[idx].mobile} onChange={(e) => handleNestedChange("professionalReferences", idx, "mobile", e.target.value)} className={inputClasses} /></InputField>
+                                                    <InputField label="Mobile" required><input required type="tel" minLength={10} maxLength={10} value={formData.professionalReferences[idx].mobile} onChange={(e) => handleNestedChange("professionalReferences", idx, "mobile", e.target.value)} className={inputClasses} placeholder="e.g. 9876543210" /></InputField>
                                                     <InputField label="Designation" required><input required type="text" value={formData.professionalReferences[idx].designation} onChange={(e) => handleNestedChange("professionalReferences", idx, "designation", e.target.value)} className={inputClasses} /></InputField>
                                                     <InputField label="Company Name" required><input required type="text" value={formData.professionalReferences[idx].company} onChange={(e) => handleNestedChange("professionalReferences", idx, "company", e.target.value)} className={inputClasses} /></InputField>
                                                 </div>
@@ -292,10 +350,42 @@ export default function OnboardingForm() {
                             {/* STEP 4: EXPERIENCE */}
                             {currentStep === 4 && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 relative overflow-hidden">
-                                        <InputField label="Total Years Of Experience" required>
-                                            <input required type="number" min="0" step="0.1" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className={inputClasses + " md:w-1/2 font-medium text-lg"} placeholder="e.g. 2.5 (Enter 0 if Fresher)" />
-                                        </InputField>
+                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 relative overflow-hidden space-y-6">
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-semibold text-gray-900">Experience Type <span className="text-red-500">*</span></label>
+                                            <div className="flex items-center gap-6">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input required type="radio" name="experienceType" value="fresher" checked={formData.yearsOfExperience === "0"} onChange={() => setFormData({ ...formData, yearsOfExperience: "0" })} className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                                    <span className="text-gray-700 font-medium">Fresher</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input required type="radio" name="experienceType" value="experienced" checked={formData.yearsOfExperience !== "" && formData.yearsOfExperience !== "0"} onChange={() => setFormData({ ...formData, yearsOfExperience: "0.5" })} className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                                    <span className="text-gray-700 font-medium">Experienced</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {formData.yearsOfExperience !== "" && formData.yearsOfExperience !== "0" && (
+                                            <div className="animate-in fade-in zoom-in duration-300">
+                                                <InputField label="Total Years Of Experience" required>
+                                                    <select required name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className={`${inputClasses} md:w-1/2 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6%209L12%2015L18%209%22%20stroke%3D%22%23000000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-12px)_center] bg-[size:16px]`}>
+                                                        <option value="" disabled>Select Experience</option>
+                                                        <option value="0.5">6 Months</option>
+                                                        <option value="1">1 Year</option>
+                                                        <option value="2">2 Years</option>
+                                                        <option value="3">3 Years</option>
+                                                        <option value="4">4 Years</option>
+                                                        <option value="5">5 Years</option>
+                                                        <option value="6">6 Years</option>
+                                                        <option value="7">7 Years</option>
+                                                        <option value="8">8 Years</option>
+                                                        <option value="9">9 Years</option>
+                                                        <option value="10">10 Years</option>
+                                                        <option value="10+">More than 10 Years</option>
+                                                    </select>
+                                                </InputField>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {Number(formData.yearsOfExperience) > 0 && (

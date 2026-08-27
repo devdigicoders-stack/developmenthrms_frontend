@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useStore } from "../context/StoreContext";
-import { Calendar, Clock, FileText, Users, TrendingUp, Plus, Check, XCircle, ChevronDown } from "lucide-react";
+import { Calendar, Clock, FileText, Users, TrendingUp, Plus, Check, XCircle, ChevronDown, CheckCircle2 } from "lucide-react";
 import { toast } from "react-toastify";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -25,6 +25,17 @@ const LeaveManagement = () => {
     const showTeamTab = canApprove || canReject;
     const [activeTab, setActiveTab] = useState("my-leaves");
     const year = new Date().getFullYear();
+    const [balances, setBalances] = useState([]);
+
+    useEffect(() => {
+        getMyBalance({ year })
+            .then(d => setBalances(d.balances || []))
+            .catch(() => {});
+    }, [year]);
+
+    const totalAssigned = balances.reduce((acc, curr) => acc + (curr.allocated || 0) + (curr.carried || 0), 0);
+    const totalUsed = balances.reduce((acc, curr) => acc + (curr.used || 0), 0);
+    const totalSaved = balances.reduce((acc, curr) => acc + ((curr.allocated || 0) + (curr.carried || 0) - (curr.used || 0) - (curr.pending || 0)), 0);
 
     const tabs = [
         { id: "my-leaves",   label: "My Leaves",   icon: FileText },
@@ -38,6 +49,36 @@ const LeaveManagement = () => {
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Leave Management</h1>
                 <p className="text-sm text-gray-500 mt-1">Manage your leave applications and balance</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-sm transition">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Assigned Leave</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{totalAssigned}</h3>
+                    </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-sm transition">
+                    <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center shrink-0">
+                        <Calendar size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Used Leave</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{totalUsed}</h3>
+                    </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-sm transition">
+                    <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                        <CheckCircle2 size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Saved Leave</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{totalSaved}</h3>
+                    </div>
+                </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl mb-6 p-1 flex gap-1 overflow-x-auto">

@@ -3,9 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { 
     ChevronLeft, Mail, Phone, MapPin, Building2, Briefcase, 
     CalendarDays, Clock, FileText, IndianRupee, Laptop, AlertCircle,
-    MoreVertical, Target, Award, CheckCircle2, TrendingUp, Circle, ChevronDown, FolderGit2, ArrowRight, UserPlus, PalmtreeIcon, LifeBuoy, FileSignature, Download
+    MoreVertical, Target, Award, CheckCircle2, TrendingUp, Circle, ChevronDown, FolderGit2, ArrowRight, UserPlus, PalmtreeIcon, LifeBuoy, FileSignature, Download, Banknote
 } from "lucide-react";
-import { fetchUsers } from "../services/UserService";
+import BankDetailsComponent from "../components/BankDetailsComponent";
+import { fetchUsers, fetchClients } from "../services/UserService";
 import { getUserBalance } from "../../leave/services/leaveService";
 import { getCompanyAttendance } from "../../attendance/services/attendanceService";
 import { getOnboardingRequests } from "../../../services/onboardingService";
@@ -30,6 +31,11 @@ const EmployeeProfile = () => {
     const [attendanceData, setAttendanceData] = useState([]);
     const [attendanceSummary, setAttendanceSummary] = useState({ present: 0, absent: 0, late: 0 });
     const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const [attendanceMonth, setAttendanceMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
     const [onboardingData, setOnboardingData] = useState(null);
 
     // Projects State
@@ -58,8 +64,12 @@ const EmployeeProfile = () => {
         const loadEmployeeData = async () => {
             try {
                 setLoading(true);
-                const res = await fetchUsers();
-                const foundUser = res.users?.find(u => u._id === id);
+                const [resUsers, resClients] = await Promise.all([
+                    fetchUsers(),
+                    fetchClients()
+                ]);
+                const allUsers = [...(resUsers.users || []), ...(resClients.users || [])];
+                const foundUser = allUsers.find(u => u._id === id);
                 if (foundUser) {
                     setEmployee(foundUser);
                     
@@ -76,43 +86,7 @@ const EmployeeProfile = () => {
                         }
                     } catch (e) { console.error("Leave error", e); }
 
-                    // Fetch dynamic Attendance Data (approximated via company attendance filter)
-                    try {
-                        const today = new Date();
-                        const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-                        const attRes = await getCompanyAttendance({ month: monthStr, employee: id });
-                        const attList = attRes?.records || attRes?.data || [];
-                        let present = 0, absent = 0, late = 0;
-                        let userAtt = [];
-                        
-                        if (attList.length > 0) {
-                            userAtt = attList.filter(a => 
-                                a.userId?._id === id || a.userId === id || 
-                                a.employee?._id === id || a.employee === id
-                            );
-                            userAtt.forEach(record => {
-                                const status = record.status?.toLowerCase() || '';
-                                if (status === 'present' || status === 'half-day' || status === 'regularized') {
-                                    present++;
-                                    if (record.isLate) late++;
-                                } else if (status === 'absent') {
-                                    absent++;
-                                } else if (status === 'late') {
-                                    late++;
-                                    present++; // Late is generally counted as present for the pie chart
-                                }
-                            });
-                        }
-                        
-                        // Fallback to 0 if no records found this month
-                        setAttendanceSummary({ present, absent, late });
-                        setAttendanceRecords(userAtt);
-                        setAttendanceData([
-                            { name: "Present", value: present, color: "#22c55e" },
-                            { name: "Absent", value: absent, color: "#ef4444" },
-                            { name: "Late", value: late, color: "#f59e0b" },
-                        ]);
-                    } catch (e) { console.error("Attendance error", e); }
+
 
                     // Fetch Onboarding Data
                     try {
@@ -135,6 +109,54 @@ const EmployeeProfile = () => {
         };
         if (id) loadEmployeeData();
     }, [id]);
+
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            if (!id) return;
+            setLoadingAttendance(true);
+            try {
+                const attRes = await getCompanyAttendance({ month: attendanceMonth, employee: id });
+                const attList = attRes?.records || attRes?.data || [];
+                let present = 0, absent = 0, late = 0;
+                let userAtt = [];
+                
+                if (attList.length > 0) {
+                    userAtt = attList.filter(a => 
+                        a.userId?._id === id || a.userId === id || 
+                        a.employee?._id === id || a.employee === id
+                    );
+                    userAtt.forEach(record => {
+                        const status = record.status?.toLowerCase() || '';
+                        if (status === 'present' || status === 'half-day' || status === 'regularized') {
+                            present++;
+                            if (record.isLate) late++;
+                        } else if (status === 'absent') {
+                            absent++;
+                        } else if (status === 'late') {
+                            late++;
+                            present++; // Late is generally counted as present for the pie chart
+                        }
+                    });
+                }
+                
+                // Sort attendance records by date ascending
+                userAtt.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                setAttendanceSummary({ present, absent, late });
+                setAttendanceRecords(userAtt);
+                setAttendanceData([
+                    { name: "Present", value: present, color: "#22c55e" },
+                    { name: "Absent", value: absent, color: "#ef4444" },
+                    { name: "Late", value: late, color: "#f59e0b" },
+                ]);
+            } catch (e) {
+                console.error("Attendance error", e);
+            } finally {
+                setLoadingAttendance(false);
+            }
+        };
+        fetchAttendance();
+    }, [id, attendanceMonth]);
 
     useEffect(() => {
         if (activeTab === "projects" && userProjects.length === 0) {
@@ -245,6 +267,7 @@ const EmployeeProfile = () => {
     const TABS = [
         { id: "overview", label: "Overview", icon: Briefcase },
         { id: "personal_info", label: "Personal Info", icon: Circle },
+        ...(onboardingData?.yearsOfExperience > 0 && onboardingData?.previousCompany?.name ? [{ id: "previous_company", label: "Previous Company", icon: Building2 }] : []),
         { id: "attendance", label: "Attendance", icon: Clock },
         { id: "leaves", label: "Leaves", icon: PalmtreeIcon },
         { id: "projects", label: "Projects", icon: FolderGit2 },
@@ -253,6 +276,7 @@ const EmployeeProfile = () => {
         { id: "offer_letter", label: "Offer Letter", icon: FileText },
         { id: "nda_signatures", label: "NDA Signatures", icon: FileSignature },
         { id: "payroll", label: "Payroll", icon: IndianRupee },
+        { id: "bank_details", label: "Bank & UPI", icon: Banknote },
         { id: "assets", label: "Assets", icon: Laptop },
         { id: "documents", label: "Documents", icon: FileText }
     ];
@@ -480,9 +504,20 @@ const EmployeeProfile = () => {
                         
                         {/* Attendance Detailed Table */}
                         <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm mt-6 overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-gray-800">Daily Attendance Log</h3>
-                                <span className="text-sm text-gray-500 font-medium">Current Month</span>
+                            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    Daily Attendance Log
+                                    {loadingAttendance && <span className="text-sm font-normal text-blue-500 animate-pulse">(Loading...)</span>}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-600">Filter:</span>
+                                    <input 
+                                        type="month" 
+                                        value={attendanceMonth}
+                                        onChange={(e) => setAttendanceMonth(e.target.value)}
+                                        className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                </div>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
@@ -929,36 +964,118 @@ const EmployeeProfile = () => {
                                         </div>
                                     </div>
                                 </div>
+                            </>
+                        ) : (
+                            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                                <AlertCircle size={40} className="mx-auto text-gray-300 mb-3" />
+                                <p className="text-gray-500 font-medium">Personal Information not available.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                                {/* Previous Company */}
-                                {onboardingData.previousCompany && onboardingData.previousCompany.name && (
-                                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                            <Building2 size={18} className="text-indigo-500"/> Previous Employment
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-y-6 gap-x-4">
-                                            <div>
-                                                <p className="text-xs text-gray-400 uppercase tracking-wide">Company Name</p>
-                                                <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.name}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-400 uppercase tracking-wide">Designation</p>
-                                                <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.designation || "—"}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-400 uppercase tracking-wide">Duration</p>
-                                                <p className="text-sm font-medium text-gray-900 mt-1">
-                                                    {onboardingData.previousCompany.dateOfJoining ? new Date(onboardingData.previousCompany.dateOfJoining).toLocaleDateString() : "—"} to {onboardingData.previousCompany.dateOfLastWorkingDay ? new Date(onboardingData.previousCompany.dateOfLastWorkingDay).toLocaleDateString() : "—"}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-400 uppercase tracking-wide">Reason for Leaving</p>
-                                                <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.reasonForLeaving || "—"}</p>
-                                            </div>
+                {activeTab === "previous_company" && (
+                    <div className="space-y-6">
+                        {onboardingData?.previousCompany ? (
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
+                                    <Building2 size={20} className="text-indigo-500"/> Previous Company Details
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-8 gap-x-6">
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Company Name</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.name || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Designation</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.designation || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Employee ID</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.employeeId || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Last In-Hand Salary</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">₹ {onboardingData.previousCompany.lastSalary?.toLocaleString() || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Date of Joining</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">
+                                            {onboardingData.previousCompany.dateOfJoining ? new Date(onboardingData.previousCompany.dateOfJoining).toLocaleDateString() : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Last Working Day</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">
+                                            {onboardingData.previousCompany.dateOfLastWorkingDay ? new Date(onboardingData.previousCompany.dateOfLastWorkingDay).toLocaleDateString() : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Website</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1 text-blue-600">
+                                            {onboardingData.previousCompany.website ? <a href={onboardingData.previousCompany.website} target="_blank" rel="noreferrer">Visit Website</a> : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">LinkedIn Profile</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1 text-blue-600">
+                                            {onboardingData.previousCompany.linkedInProfile ? <a href={onboardingData.previousCompany.linkedInProfile} target="_blank" rel="noreferrer">View Profile</a> : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">HR / Manager Name</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.hrName || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">HR Contact</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.hrContact || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">HR Email</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.hrEmail || "—"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Official Email</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.officialEmail || "—"}</p>
+                                    </div>
+                                    <div className="md:col-span-2 lg:col-span-4">
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Company Address</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.address || "—"}</p>
+                                    </div>
+                                    <div className="md:col-span-2 lg:col-span-4">
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">Reason for Leaving</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{onboardingData.previousCompany.reasonForLeaving || "—"}</p>
+                                    </div>
+                                    <div className="md:col-span-2 lg:col-span-4 mt-4 border-t border-gray-100 pt-6">
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-3 font-semibold">Uploaded Documents</p>
+                                        <div className="flex flex-wrap gap-4">
+                                            {onboardingData.previousCompany.offerLetterFile?.url && (
+                                                <a href={onboardingData.previousCompany.offerLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                    <FileText size={16} /> Offer Letter
+                                                </a>
+                                            )}
+                                            {onboardingData.previousCompany.experienceLetterFile?.url && (
+                                                <a href={onboardingData.previousCompany.experienceLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                    <FileText size={16} /> Experience Letter
+                                                </a>
+                                            )}
+                                            {onboardingData.previousCompany.relievingLetterFile?.url && (
+                                                <a href={onboardingData.previousCompany.relievingLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                    <FileText size={16} /> Relieving Letter
+                                                </a>
+                                            )}
+                                            {onboardingData.previousCompany.salarySlipsFile?.url && (
+                                                <a href={onboardingData.previousCompany.salarySlipsFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                    <FileText size={16} /> Salary Slips
+                                                </a>
+                                            )}
+                                            {(!onboardingData.previousCompany.offerLetterFile?.url && !onboardingData.previousCompany.experienceLetterFile?.url && !onboardingData.previousCompany.relievingLetterFile?.url && !onboardingData.previousCompany.salarySlipsFile?.url) && (
+                                                <span className="text-sm text-gray-500 italic">No documents uploaded.</span>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </>
+                                </div>
+                            </div>
                         ) : (
                             <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm text-center">
                                 <h3 className="text-xl font-bold text-gray-800">No Onboarding Data</h3>
@@ -1010,6 +1127,12 @@ const EmployeeProfile = () => {
                                 <p className="text-sm text-gray-500 mt-1">This employee currently has no company assets assigned.</p>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === "bank_details" && (
+                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                        <BankDetailsComponent employeeId={employee._id} isAdminView={true} />
                     </div>
                 )}
 

@@ -1,57 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { CalendarClock, FileText, User, ShieldCheck, Check, ArrowLeft, Download, LogOut } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { resignationService } from '../../../services/resignationService';
 import { toast } from 'react-toastify';
-import { CalendarClock, FileText, User, ShieldCheck, Check, ArrowLeft, Download, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-const MyResignation = () => {
-    const [resignation, setResignation] = useState(null);
-    const [loading, setLoading] = useState(true);
+const ViewResignation = () => {
+    const location = useLocation();
     const navigate = useNavigate();
+    const resignation = location.state?.resignation;
 
     useEffect(() => {
-        fetchMyResignation();
-    }, []);
-
-    const fetchMyResignation = async () => {
-        setLoading(true);
-        try {
-            const data = await resignationService.getMyResignation();
-            if (data.success && data.resignations.length > 0) {
-                // Show the active one, or latest
-                const active = data.resignations.find(r => ["Pending", "Approved"].includes(r.status));
-                setResignation(active || data.resignations[0]);
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to fetch resignation data');
-        } finally {
-            setLoading(false);
+        if (!resignation) {
+            navigate('/manage-resignations');
         }
-    };
+    }, [resignation, navigate]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full min-h-[400px]">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
-            </div>
-        );
-    }
-
-    if (!resignation) {
-        return (
-            <div className="p-4 sm:p-6 min-h-full flex flex-col items-center justify-center w-full">
-                <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md w-full border border-gray-100">
-                    <div className="flex justify-center mb-4">
-                        <div className="bg-gray-50 p-4 rounded-full">
-                            <LogOut size={48} className="text-gray-300" />
-                        </div>
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">No Active Exit Record</h2>
-                    <p className="text-gray-500">You do not have any active resignation or exit record initiated at the moment.</p>
-                </div>
-            </div>
-        );
-    }
+    if (!resignation) return null;
 
     const isApproved = resignation.status === 'Approved';
     const isRejected = resignation.status === 'Rejected';
@@ -71,17 +34,68 @@ const MyResignation = () => {
 
     const employee = resignation.employeeId || {};
 
+    const [isDownloading, setIsDownloading] = React.useState(false);
+    const [isDownloadingSlips, setIsDownloadingSlips] = React.useState(false);
+
+    const handleDownloadExperienceLetter = async () => {
+        try {
+            setIsDownloading(true);
+            const response = await resignationService.downloadExperienceLetter(resignation._id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${employee.firstName}_${employee.lastName}_Experience_Letter.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading experience letter:', error);
+            toast.error('Failed to download Experience Letter.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const handleDownloadSalarySlips = async () => {
+        try {
+            setIsDownloadingSlips(true);
+            const response = await resignationService.downloadSalarySlips(resignation._id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${employee.firstName}_${employee.lastName}_3Months_Salary_Slip.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading salary slips:', error);
+            toast.error('Failed to download Salary Slips.');
+        } finally {
+            setIsDownloadingSlips(false);
+        }
+    };
+
     return (
         <div className="min-h-full w-full bg-[#f8f9fc] p-4 sm:p-6 lg:p-8 font-sans text-gray-800">
             <div className="w-full h-full flex flex-col">
                 
+                {/* Back Button */}
+                <div className="mb-4">
+                    <button 
+                        onClick={() => navigate('/manage-resignations')}
+                        className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-medium transition-colors"
+                    >
+                        <ArrowLeft size={18} /> Back to Manage Exits
+                    </button>
+                </div>
+
                 {/* Top Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 relative">
                     <div className="z-10">
                         <h1 className="text-4xl font-bold text-[#0f2830] mb-2 tracking-tight">Exit Record</h1>
                         <div className="flex items-center flex-wrap gap-3">
                             <p className="text-[#3b4c53] font-medium text-[15px]">
-                                Your exit status is currently <span className={`${isApproved ? 'text-emerald-600' : isRejected ? 'text-red-600' : 'text-amber-600'} font-semibold lowercase`}>{resignation.status}</span>.
+                                Exit status is currently <span className={`${isApproved ? 'text-emerald-600' : isRejected ? 'text-red-600' : 'text-amber-600'} font-semibold lowercase`}>{resignation.status}</span>.
                             </p>
                             <div className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 ${
                                 isApproved ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
@@ -94,8 +108,28 @@ const MyResignation = () => {
                         </div>
                     </div>
                     
-                    {/* Illustration - Positioning to match the exact design */}
-                    <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-4">
+                    {/* Illustration & Action */}
+                    <div className="hidden md:flex flex-row items-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 gap-4 pr-10 z-20">
+                        {isApproved && (
+                            <div className="flex flex-row gap-3">
+                                <button 
+                                    onClick={handleDownloadSalarySlips}
+                                    disabled={isDownloadingSlips}
+                                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm disabled:opacity-70 justify-center"
+                                >
+                                    <Download size={16} /> 
+                                    {isDownloadingSlips ? 'Generating...' : '3-Month Salary Slip'}
+                                </button>
+                                <button 
+                                    onClick={handleDownloadExperienceLetter}
+                                    disabled={isDownloading}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm disabled:opacity-70 justify-center"
+                                >
+                                    <Download size={16} /> 
+                                    {isDownloading ? 'Generating...' : 'Experience Letter'}
+                                </button>
+                            </div>
+                        )}
                         <img src="/image.png" alt="Exit Illustration" className="h-32 object-contain mix-blend-multiply" />
                     </div>
                 </div>
@@ -127,7 +161,6 @@ const MyResignation = () => {
                         
                         {/* Left Column */}
                         <div className="space-y-6">
-                            {/* Employee Details Box */}
                             <div className="bg-[#fafbfb] rounded-2xl p-6 border border-gray-100 h-auto">
                                 <div className="flex items-center gap-3 mb-5">
                                     <div className="bg-[#e9f5ef] p-2 rounded-lg text-emerald-700">
@@ -159,7 +192,6 @@ const MyResignation = () => {
                                 </div>
                             </div>
 
-                            {/* Notes Box */}
                             <div className="bg-[#fafbfb] rounded-2xl p-6 border border-gray-100">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="bg-[#e9f5ef] p-2 rounded-lg text-emerald-700">
@@ -175,7 +207,6 @@ const MyResignation = () => {
 
                         {/* Right Column */}
                         <div className="space-y-6">
-                            {/* Reason for Exit Box */}
                             <div className="bg-[#fafbfb] rounded-2xl p-6 border border-gray-100">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="bg-[#e9f5ef] p-2 rounded-lg text-emerald-700">
@@ -184,11 +215,10 @@ const MyResignation = () => {
                                     <h3 className="text-emerald-800 font-bold text-sm uppercase tracking-wide">Reason For Exit</h3>
                                 </div>
                                 <p className="text-gray-800 text-[14.5px] font-medium mt-2">
-                                    {resignation.reason}
+                                    {resignation.reason || "N/A"}
                                 </p>
                             </div>
 
-                            {/* Exit Status Box */}
                             <div className="bg-[#fafbfb] rounded-2xl p-6 border border-gray-100">
                                 <div className="flex items-center gap-3 mb-5">
                                     <div className="bg-[#e9f5ef] p-2 rounded-lg text-emerald-700">
@@ -211,7 +241,7 @@ const MyResignation = () => {
                                         : isApproved 
                                             ? "Exit request approved. Clearance pending." 
                                             : isPending 
-                                                ? "Your exit request is under review." 
+                                                ? "Exit request is under review." 
                                                 : "Exit request has been rejected."}
                                 </p>
                             </div>
@@ -219,11 +249,9 @@ const MyResignation = () => {
 
                     </div>
                 </div>
-
-                {/* Footer Actions (Removed as per request) */}
             </div>
         </div>
     );
 };
 
-export default MyResignation;
+export default ViewResignation;

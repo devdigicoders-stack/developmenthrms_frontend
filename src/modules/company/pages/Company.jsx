@@ -70,6 +70,10 @@ const Company = () => {
     };
 
     const handleCreate = async (data) => {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.adminEmail)) return toast.error("Please enter a valid email address.");
+        if (!/^\d{10}$/.test(data.adminPhone)) return toast.error("Phone number must be exactly 10 digits.");
+        if (!data.adminPassword || data.adminPassword.length < 6) return toast.error("Admin Password must be at least 6 characters long.");
+
         const toastId = toast.loading("Creating company...");
         try { setLoading(true); await createCompanyWithAdmin(data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company created successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
         catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to create company.", type: "error", isLoading: false, autoClose: 3000 }); }
@@ -77,6 +81,10 @@ const Company = () => {
     };
 
     const handleUpdate = async (data) => {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.adminEmail)) return toast.error("Please enter a valid email address.");
+        if (!/^\d{10}$/.test(data.adminPhone)) return toast.error("Phone number must be exactly 10 digits.");
+        if (data.adminPassword && data.adminPassword.length < 6) return toast.error("Admin Password must be at least 6 characters long.");
+
         const toastId = toast.loading("Updating company...");
         try { setLoading(true); await updateCompanyWithAdmin(selected._id, data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
         catch (err) { toast.update(toastId, { render: err?.response?.data?.message || "Failed to update company.", type: "error", isLoading: false, autoClose: 3000 }); }

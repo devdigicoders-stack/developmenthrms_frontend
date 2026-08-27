@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer, Pencil } from "lucide-react";
+import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer, Pencil, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
@@ -311,6 +311,46 @@ const AdminPayroll = ({ can, company }) => {
         catch (e) { toast.error(e?.response?.data?.message || "Failed"); }
     };
 
+    const handleDownloadCSV = () => {
+        if (runs.length === 0) {
+            toast.info("No data to download");
+            return;
+        }
+
+        const headers = [
+            "Employee Name", "Employee Code", "Month", "Working Days", 
+            "Present", "Absent", "Half Days", "Paid Leave", "LOP Days", 
+            "Gross", "Deductions", "Net", "Status"
+        ];
+        
+        const rows = runs.map(r => [
+            `"${r.userId?.firstName} ${r.userId?.lastName}"`,
+            `"${r.userId?.employeeCode || ""}"`,
+            r.month,
+            r.totalWorkingDays,
+            r.presentDays,
+            r.absentDays,
+            r.halfDays,
+            r.paidLeaveDays,
+            r.lopDays,
+            r.grossEarnings,
+            r.totalDeductions,
+            r.netSalary,
+            r.status
+        ]);
+
+        const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `Payroll_${month}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+
     const hasDrafts   = runs.some(r => r.status === "draft");
     const hasApproved = runs.some(r => r.status === "approved");
 
@@ -339,6 +379,10 @@ const AdminPayroll = ({ can, company }) => {
                         <Banknote size={14} /> Bulk Mark Paid
                     </button>
                 )}
+                <button onClick={handleDownloadCSV}
+                    className="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition ml-auto">
+                    <Download size={14} /> Export CSV
+                </button>
             </div>
 
             <SummaryCards summary={summary} />
@@ -347,22 +391,28 @@ const AdminPayroll = ({ can, company }) => {
             <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                            <th className="px-4 py-3 text-left">Employee</th>
-                            <th className="px-4 py-3 text-left">Month</th>
-                            <th className="px-4 py-3 text-right">Gross</th>
-                            <th className="px-4 py-3 text-right">Deductions</th>
-                            <th className="px-4 py-3 text-right">Net</th>
-                            <th className="px-4 py-3 text-center">Status</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-[11px] uppercase tracking-wide text-gray-500 whitespace-nowrap">
+                            <th className="px-3 py-3 text-left">Employee</th>
+                            <th className="px-3 py-3 text-left">Month</th>
+                            <th className="px-3 py-3 text-center">W. Days</th>
+                            <th className="px-3 py-3 text-center">Present</th>
+                            <th className="px-3 py-3 text-center">Absent</th>
+                            <th className="px-3 py-3 text-center">Half Days</th>
+                            <th className="px-3 py-3 text-center">Paid Leave</th>
+                            <th className="px-3 py-3 text-center">LOP Days</th>
+                            <th className="px-3 py-3 text-right">Gross</th>
+                            <th className="px-3 py-3 text-right">Deductions</th>
+                            <th className="px-3 py-3 text-right">Net</th>
+                            <th className="px-3 py-3 text-center">Status</th>
+                            <th className="px-3 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-400">Loading...</td></tr>
+                            <tr><td colSpan={13} className="px-4 py-12 text-center text-gray-400">Loading...</td></tr>
                         ) : runs.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-4 py-14 text-center">
+                                <td colSpan={13} className="px-4 py-14 text-center">
                                     <IndianRupee size={36} className="mx-auto text-gray-300 mb-2" />
                                     <p className="text-gray-400 text-sm">No payroll records. Click "Generate Payroll" to start.</p>
                                 </td>
@@ -371,22 +421,32 @@ const AdminPayroll = ({ can, company }) => {
                             <>
                                 <tr key={run._id} className="hover:bg-gray-50 transition">
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            {run.userId?.profilePic?.url
-                                                ? <img src={run.userId.profilePic.url} className="w-7 h-7 rounded-full object-cover" alt="" />
-                                                : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                        <div className="flex items-center gap-3">
+                                            {run.userId?.profilePic?.url ? (
+                                                <img src={run.userId.profilePic.url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                                                     {run.userId?.firstName?.[0]}{run.userId?.lastName?.[0]}
-                                                  </div>}
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="font-medium text-gray-800">{run.userId?.firstName} {run.userId?.lastName}</p>
                                                 <p className="text-xs text-gray-400">{run.userId?.employeeCode}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-gray-600">{run.month}</td>
-                                    <td className="px-4 py-3 text-right text-gray-700">{fmt(run.grossEarnings)}</td>
-                                    <td className="px-4 py-3 text-right text-red-500">- {fmt(run.totalDeductions)}</td>
-                                    <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt(run.netSalary)}</td>
+                                    <td className="px-3 py-3 text-gray-600">{run.month}</td>
+                                    
+                                    <td className="px-3 py-3 text-center text-gray-700 font-medium">{run.totalWorkingDays}</td>
+                                    <td className="px-3 py-3 text-center text-green-600 font-medium">{run.presentDays}</td>
+                                    <td className="px-3 py-3 text-center text-red-500 font-medium">{run.absentDays}</td>
+                                    <td className="px-3 py-3 text-center text-yellow-600 font-medium">{run.halfDays}</td>
+                                    <td className="px-3 py-3 text-center text-blue-500 font-medium">{run.paidLeaveDays}</td>
+                                    <td className="px-3 py-3 text-center text-red-600 font-bold bg-red-50/50">{run.lopDays}</td>
+
+                                    <td className="px-3 py-3 text-right text-gray-700">{fmt(run.grossEarnings)}</td>
+                                    <td className="px-3 py-3 text-right text-red-500">- {fmt(run.totalDeductions)}</td>
+                                    <td className="px-3 py-3 text-right font-semibold text-gray-900">{fmt(run.netSalary)}</td>
                                     <td className="px-4 py-3 text-center">
                                         <span className={`text-xs px-2 py-0.5 rounded-full border font-medium capitalize ${STATUS_CLS[run.status]}`}>
                                             {run.status}
@@ -431,21 +491,37 @@ const AdminPayroll = ({ can, company }) => {
                                 </tr>
                                 {expandedId === run._id && (
                                     <tr key={`${run._id}-exp`} className="bg-gray-50">
-                                        <td colSpan={7} className="px-6 py-4">
-                                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center text-xs">
-                                                {[
-                                                    { label: "Working Days", value: run.totalWorkingDays },
-                                                    { label: "Present",      value: run.presentDays },
-                                                    { label: "Absent",       value: run.absentDays },
-                                                    { label: "Half Days",    value: run.halfDays },
-                                                    { label: "Paid Leave",   value: run.paidLeaveDays },
-                                                    { label: "LOP Days",     value: run.lopDays },
-                                                ].map(({ label, value }) => (
-                                                    <div key={label} className="bg-white border border-gray-200 rounded-lg p-2">
-                                                        <p className="font-bold text-gray-800 text-sm">{value}</p>
-                                                        <p className="text-gray-400 mt-0.5">{label}</p>
+                                        <td colSpan={13} className="px-6 py-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                                    <p className="text-xs font-semibold text-gray-500 uppercase">Gross Salary Breakdown</p>
+                                                    <div className="mt-2 space-y-1">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">Basic</span>
+                                                            <span className="font-medium">₹{(run.components.find(c=>c.name==="Basic")?.amount || 0).toLocaleString()}</span>
+                                                        </div>
+                                                        {run.components.filter(c => c.type === "earning" && c.name !== "Basic").map(c => (
+                                                            <div key={c.name} className="flex justify-between text-sm">
+                                                                <span className="text-gray-600">{c.name}</span>
+                                                                <span className="font-medium">₹{c.amount.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
+                                                </div>
+                                                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                                    <p className="text-xs font-semibold text-gray-500 uppercase">Deductions Breakdown</p>
+                                                    <div className="mt-2 space-y-1">
+                                                        {run.components.filter(c => c.type === "deduction").map(c => (
+                                                            <div key={c.name} className="flex justify-between text-sm">
+                                                                <span className="text-gray-600">{c.name}</span>
+                                                                <span className="font-medium text-red-500">-₹{c.amount.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                        {run.components.filter(c => c.type === "deduction").length === 0 && (
+                                                            <p className="text-sm text-gray-400">No deductions</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>

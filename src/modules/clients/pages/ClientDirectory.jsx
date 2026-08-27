@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Search, Building2, UserCircle } from "lucide-react";
-import { fetchClients } from "../../employee/services/UserService";
+import { Users, Search, Building2, UserCircle, Plus } from "lucide-react";
+import ClientDrawer from "../components/ClientDrawer";
+import { fetchClients, createUser, fetchUsers } from "../../employee/services/UserService";
+import { fetchRoles, getAllRolesForAdmin, getRolesByCompany } from "../../roles/service/RoleService";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
+import { getShiftsByCompany } from "../../workshift/services/workShiftService";
+import { getStatusesByCompany } from "../../employmentStatus/services/employmentStatusService";
+import { getDepartmentsByCompany } from "../../department/services/departmentService";
+import { useStore } from "../../../context/StoreContext";
 import { toast } from "react-toastify";
 
 const StatCard = ({ icon, label, value, iconBg, iconColor }) => (
@@ -15,14 +22,98 @@ const StatCard = ({ icon, label, value, iconBg, iconColor }) => (
 );
 
 const ClientDirectory = () => {
+    const { user } = useStore();
     const navigate = useNavigate();
+    const permissions = user?.role?.permissions || [];
+    const hasPermission = (perm) => permissions.includes(perm);
+
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    
+    const [open, setOpen] = useState(false);
+    const [companies, setCompanies] = useState([]);
+    const [roles, setRoles] = useState([]);
+    const [modalRoles, setModalRoles] = useState([]);
+    const [modalShifts, setModalShifts] = useState([]);
+    const [modalStatuses, setModalStatuses] = useState([]);
+    const [modalCompanyUsers, setModalCompanyUsers] = useState([]);
+    const [modalDepartments, setModalDepartments] = useState([]);
+    const [drawerLoading, setDrawerLoading] = useState(false);
 
     useEffect(() => {
         loadClients();
+        loadRoles();
+        loadCompanies();
     }, []);
+
+    const isSuperAdmin = user?.role?.name === "super_admin";
+
+    const loadRoles = async () => {
+        try {
+            const res = isSuperAdmin ? await getAllRolesForAdmin() : await fetchRoles();
+            setRoles(res.data || []);
+        } catch (err) { console.error(err); }
+    };
+
+    const loadCompanies = async () => {
+        try {
+            const data = await fetchAllCompaniesList();
+            setCompanies(data.companies || []);
+        } catch (err) { console.error(err); }
+    };
+
+    const handleFieldChange = async (name, value, formData) => {
+        if (name === "companyId") {
+            try {
+                const [rolesRes, shiftsRes, statusesRes, usersRes, deptsRes] = await Promise.all([
+                    getRolesByCompany(value),
+                    getShiftsByCompany(value),
+                    getStatusesByCompany(value),
+                    fetchUsers(),
+                    getDepartmentsByCompany(value),
+                ]);
+                setModalRoles(rolesRes.data || []);
+                setModalShifts(shiftsRes.data || []);
+                setModalStatuses(statusesRes.employmentStatuses || []);
+                setModalCompanyUsers((usersRes.users || []).filter(u => u.companyId?._id === value || u.companyId === value));
+                setModalDepartments(deptsRes.departments || []);
+                return { ...formData, companyId: value, role: "", workShift: "", reportingTo: "", employmentStatus: "", department: "" };
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        return { ...formData, [name]: value };
+    };
+
+    const handleCreate = async (data) => {
+        if (!hasPermission("Create_USER")) return;
+        try {
+            setDrawerLoading(true);
+            let payload = data;
+            if (data.finalProposal instanceof File) {
+                payload = new FormData();
+                Object.keys(data).forEach(key => {
+                    if (data[key] !== undefined && data[key] !== null) {
+                        payload.append(key, data[key]);
+                    }
+                });
+            }
+            const res = await createUser(payload);
+            if (res.success) {
+                toast.success(res.message || "Client created successfully");
+                loadClients();
+                setOpen(false);
+            } else {
+                const errorMsg = Array.isArray(res.errors) ? res.errors.join(", ") : res.message;
+                toast.error(errorMsg || "Failed to create client");
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || err?.message || "Failed to create client");
+        } finally {
+            setDrawerLoading(false);
+        }
+    };
 
     const loadClients = async () => {
         try {
@@ -53,6 +144,15 @@ const ClientDirectory = () => {
                     <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Clients Directory</h1>
                     <p className="text-gray-500 mt-1">Manage and view all your clients</p>
                 </div>
+                {hasPermission("Create_USER") && (
+                    <button
+                        onClick={() => setOpen(true)}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm shadow-indigo-200"
+                    >
+                        <Plus size={18} />
+                        Add Client
+                    </button>
+                )}
             </div>
 
 
@@ -157,6 +257,16 @@ const ClientDirectory = () => {
                     </table>
                 </div>
             </div>
+            <ClientDrawer
+                isOpen={open}
+                onClose={() => setOpen(false)}
+                initialData={null}
+                companies={companies}
+                roles={modalRoles}
+                onSubmit={handleCreate}
+                onCompanyChange={handleFieldChange}
+                loading={drawerLoading}
+            />
         </div>
     );
 };

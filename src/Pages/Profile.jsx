@@ -5,8 +5,9 @@ import { getProfile, updateUserProfile, changePassword } from "../modules/auth/s
 import { getCompanyWorkShifts } from "../modules/workshift/services/workShiftService";
 import {
     Camera, Pencil, X, Check, User, Mail, Phone, Calendar,
-    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin
+    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote
 } from "lucide-react";
+import BankDetailsComponent from "../modules/employee/components/BankDetailsComponent";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition";
@@ -52,6 +53,7 @@ const Profile = () => {
     const TABS = [
         { key: "personal",   label: "Personal" },
         { key: "employment", label: "Employment" },
+        { key: "bank",       label: "Bank & UPI" },
         { key: "security",   label: "Security" },
     ];
 
@@ -340,7 +342,11 @@ const Profile = () => {
                         isAdmin && editMode ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <Field label="Employee Code" icon={Briefcase}>
-                                    <input name="employeeCode" value={form.employeeCode} onChange={handleChange} placeholder="EMP-001" />
+                                    <input name="employeeCode" value={form.employeeCode || "DCT-"} onChange={(e) => {
+                                        let val = e.target.value.toUpperCase();
+                                        if (!val.startsWith("DCT-")) val = "DCT-";
+                                        setForm({...form, employeeCode: val});
+                                    }} placeholder="DCT-001" />
                                 </Field>
                                 <Field label="Joining Date" icon={Calendar}>
                                     <input type="date" name="joiningDate" value={form.joiningDate} onChange={handleChange} />
@@ -372,6 +378,10 @@ const Profile = () => {
                                 <InfoRow icon={User}        label="Reporting To"       value={form.reportingToName} />
                             </div>
                         )
+                    )}
+                    {/* ── Bank & UPI ── */}
+                    {tab === "bank" && (
+                        <BankDetailsComponent isAdminView={false} />
                     )}
 
                     {/* ── Security ── */}

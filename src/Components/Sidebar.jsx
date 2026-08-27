@@ -52,6 +52,7 @@ const NAV = [
         groupIcon: IndianRupee,
         items: [
             { name: "Payroll Processing", icon: IndianRupee, path: "/payroll", permissions: ["VIEW_PAYROLL", "MANAGE_PAYROLL"] },
+            { name: "Penalty Dates", icon: IndianRupee, path: "/payroll/penalty-dates", permissions: ["MANAGE_PAYROLL"] },
             { name: "Payroll Reports", icon: IndianRupee, path: "/reports/payroll", permissions: ["MANAGE_PAYROLL"] },
         ],
     },
@@ -117,7 +118,7 @@ const NAV = [
             { name: "Manage Tickets", icon: AlertCircle, path: "/manage-tickets", permissions: ["MANAGE_TICKET"] },
             { name: "My Assets", icon: Laptop, path: "/my-assets", permissions: [], hideForClient: true },
             { name: "Manage Assets", icon: Monitor, path: "/assets", permissions: ["MANAGE_ASSETS"] },
-            { name: "My Resignation", icon: LogOut, path: "/my-resignation", permissions: [], hideForClient: true },
+            { name: "My Resignation", icon: LogOut, path: "/my-resignation", permissions: [], hideForClient: true, requireNoticePeriod: true },
         ],
     },
     {
@@ -130,7 +131,7 @@ const NAV = [
             { name: "Employee Reports", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
             { name: "Sales Reports", icon: TrendingUp, path: "/reports/sales", permissions: ["VIEW_ALL_LEADS", "MANAGE_LEADS"] },
             { name: "Performance Reports", icon: BarChart2, path: "/reports/performance", permissions: [] },
-            { name: "Department Reports", icon: FolderKanban, path: "/dept-reports", permissions: ["VIEW_ALL_DEPARTMENTS"] },
+            // { name: "Department Reports", icon: FolderKanban, path: "/dept-reports", permissions: ["VIEW_ALL_DEPARTMENTS"] },
         ],
     },
 ];
@@ -165,6 +166,10 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         if (item.hideForSuperAdmin && isSuperAdmin) return false;
         if (item.hideForClient && isClient) return false;
         if (item.clientOnly && !isClient) return false;
+        
+        // Hide if requires notice period and user is not in notice period
+        if (item.requireNoticePeriod && user?.employmentStatus?.name !== "Notice Period") return false;
+
         if (item.superAdminOnly) return isSuperAdmin;
         if (item.adminOnly) return isAdmin;
         const perms = item.permissions || [];
@@ -191,14 +196,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                 {/* Logo */}
                 <div className={`flex items-center h-16 px-4 border-b border-white/5 ${collapsed ? "justify-center" : "justify-between"}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden shadow-lg shadow-blue-500/20">
-                            {user?.companyId?.icon?.url
-                                ? <img src={user.companyId.icon.url} alt="logo" className="w-full h-full object-cover" />
-                                : <span>HR</span>}
-                        </div>
-                        {!collapsed && (
-                            <span className="font-bold text-base tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300">Workastra</span>
-                        )}
+                        <img 
+                            src="/DigiCoders Transparent Logo (2).png" 
+                            alt="DigiCoders Logo" 
+                            className={`object-contain transition-all duration-300 ${collapsed ? "w-10 h-10" : "h-12"}`} 
+                        />
                     </div>
                     {!collapsed && (
                         <button
@@ -224,6 +226,40 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                         const visible = section.items.filter(canSeeItem);
                         if (!visible.length) return null;
                         const isOpen = openGroups[section.group];
+
+                        if (visible.length === 1) {
+                            const item = visible[0];
+                            return (
+                                <div key={section.group} className="mb-2">
+                                    <NavLink to={item.path} end={true} onClick={close}
+                                        className={({ isActive }) =>
+                                            `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200
+                                            ${isActive 
+                                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/20" 
+                                                : "text-slate-400 hover:bg-white/10 hover:text-white"
+                                            } ${collapsed ? 'justify-center' : ''}`
+                                        }>
+                                        <item.icon size={18} className={`shrink-0 transition-transform duration-200 group-hover:scale-110`} />
+                                        {!collapsed && (
+                                            <span className="truncate flex-1">{item.name}</span>
+                                        )}
+                                        
+                                        {collapsed && (
+                                            <div className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                                                {item.name}
+                                            </div>
+                                        )}
+
+                                        {!collapsed && item.path === "/projects" && taskCommentCount > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 animate-pulse" />
+                                        )}
+                                        {collapsed && item.path === "/projects" && taskCommentCount > 0 && (
+                                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-400" />
+                                        )}
+                                    </NavLink>
+                                </div>
+                            );
+                        }
 
                         return (
                             <div key={section.group} className="mb-2">
@@ -255,7 +291,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                                 {!collapsed && (
                                     <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${!isOpen ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100'}`}>
                                         {visible.map(item => (
-                                        <NavLink key={item.path} to={item.path} end={item.path === "/" || item.path === "/settings"} onClick={close}
+                                        <NavLink key={item.path} to={item.path} end={true} onClick={close}
                                             className={({ isActive }) =>
                                                 `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200
                                                 ${isActive 

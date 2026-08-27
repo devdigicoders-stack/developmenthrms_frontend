@@ -112,14 +112,51 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
-        setForm(initialData || {});
+        const formattedData = { ...(initialData || {}) };
+        if (formattedData.joiningDate) {
+            formattedData.joiningDate = formattedData.joiningDate.split("T")[0];
+        }
+        if (formattedData.dateOfBirth) {
+            formattedData.dateOfBirth = formattedData.dateOfBirth.split("T")[0];
+        }
+        if (formattedData.aadharDateOfBirth) {
+            formattedData.aadharDateOfBirth = formattedData.aadharDateOfBirth.split("T")[0];
+        }
+        setForm(formattedData);
         setErrors({});
     }, [initialData, isOpen]);
+
+    // Auto-select company and trigger side-effects to load its roles/shifts/etc
+    useEffect(() => {
+        if (!isOpen || isEdit) return;
+        if (!form.companyId && companies?.length === 1) {
+            handleCompanyChange(companies[0]._id);
+        }
+    }, [isOpen, isEdit, form.companyId, companies]);
+
+    // Auto-select other dropdowns if they have exactly 1 item
+    useEffect(() => {
+        if (!isOpen || isEdit) return;
+        setForm(prev => {
+            const next = { ...prev };
+            let changed = false;
+            
+            // Only auto-select roles/shifts if a company is selected (so lists are populated)
+            if (prev.companyId) {
+                if (!next.role && roles?.length === 1) { next.role = roles[0]._id; changed = true; }
+                if (!next.workShift && shifts?.length === 1) { next.workShift = shifts[0]._id; changed = true; }
+                if (!next.employmentStatus && employmentStatuses?.length === 1) { next.employmentStatus = employmentStatuses[0]._id; changed = true; }
+                if (!next.department && departments?.length === 1) { next.department = departments[0]._id; changed = true; }
+            }
+            
+            return changed ? next : prev;
+        });
+    }, [roles, shifts, employmentStatuses, departments, isOpen, isEdit, form.companyId]);
 
     const set = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
 
     const handleCompanyChange = async (value) => {
-        const updated = await onCompanyChange("companyId", value, { ...form, companyId: value, role: "", workShift: "", reportingTo: "", employmentStatus: "" });
+        const updated = await onCompanyChange("companyId", value, { ...form, companyId: value, role: "", workShift: "", reportingTo: "", employmentStatus: "", department: "" });
         setForm(updated);
     };
 
@@ -132,6 +169,7 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
         if (!isEdit && form.password && form.password.length < 6) newErrors.password = "Password must be at least 6 characters";
         if (!form.companyId) newErrors.companyId = "Company is required";
         if (!form.role) newErrors.role = "Role is required";
+        if (!form.reportingTo) newErrors.reportingTo = "Reporting Manager is required";
         
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -254,19 +292,27 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Field label="Company *" icon={Building2}>
-                                    <select value={form.companyId || ""} onChange={(e) => handleCompanyChange(e.target.value)}>
-                                        <option value="">Select company</option>
-                                        {companies.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                    </select>
+                                    {companies.length === 1 ? (
+                                        <input type="text" readOnly value={companies[0].name} className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+                                    ) : (
+                                        <select value={form.companyId || ""} onChange={(e) => handleCompanyChange(e.target.value)}>
+                                            <option value="">Select company</option>
+                                            {companies.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                        </select>
+                                    )}
                                 </Field>
                                 {errors.companyId && <p className="text-xs text-red-500 mt-1">{errors.companyId}</p>}
                             </div>
                             <div>
                                 <Field label="Role *" icon={ShieldCheck}>
-                                    <select value={form.role || ""} onChange={(e) => set("role", e.target.value)}>
-                                        <option value="">Select role</option>
-                                        {roles.map((r) => <option key={r._id} value={r._id}>{r.name}</option>)}
-                                    </select>
+                                    {roles.length === 1 ? (
+                                        <input type="text" readOnly value={roles[0].name} className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+                                    ) : (
+                                        <select value={form.role || ""} onChange={(e) => set("role", e.target.value)}>
+                                            <option value="">Select role</option>
+                                            {roles.map((r) => <option key={r._id} value={r._id}>{r.name}</option>)}
+                                        </select>
+                                    )}
                                 </Field>
                                 {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
                             </div>
@@ -288,7 +334,11 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                         )}
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <Field label="Employee Code" icon={Briefcase}>
-                                <input type="text" value={form.employeeCode || ""} onChange={(e) => set("employeeCode", e.target.value)} placeholder="EMP-001" />
+                                <input type="text" value={form.employeeCode || "DCT-"} onChange={(e) => {
+                                    let val = e.target.value.toUpperCase();
+                                    if (!val.startsWith("DCT-")) val = "DCT-";
+                                    set("employeeCode", val);
+                                }} placeholder="DCT-001" />
                             </Field>
                             <Field label="Joining Date" icon={Calendar}>
                                 <input type="date" value={form.joiningDate || ""} onChange={(e) => set("joiningDate", e.target.value)} />
@@ -296,35 +346,52 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <Field label="Work Shift" icon={Clock}>
-                                <select value={form.workShift || ""} onChange={(e) => set("workShift", e.target.value)}>
-                                    <option value="">Select shift</option>
-                                    {shifts.map((s) => (
-                                        <option key={s._id} value={s._id}>
-                                            {s.name} ({s.startTime} – {s.endTime})
-                                        </option>
-                                    ))}
-                                </select>
+                                {shifts.length === 1 ? (
+                                    <input type="text" readOnly value={`${shifts[0].name} (${shifts[0].startTime} – ${shifts[0].endTime})`} className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+                                ) : (
+                                    <select value={form.workShift || ""} onChange={(e) => set("workShift", e.target.value)}>
+                                        <option value="">Select shift</option>
+                                        {shifts.map((s) => (
+                                            <option key={s._id} value={s._id}>
+                                                {s.name} ({s.startTime} – {s.endTime})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </Field>
                             <Field label="Employment Status" icon={Briefcase}>
-                                <select value={form.employmentStatus || ""} onChange={(e) => set("employmentStatus", e.target.value)}>
-                                    <option value="">Select status</option>
-                                    {employmentStatuses.map((s) => (
-                                        <option key={s._id} value={s._id}>{s.name}</option>
-                                    ))}
-                                </select>
+                                {employmentStatuses.length === 1 ? (
+                                    <input type="text" readOnly value={employmentStatuses[0].name} className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+                                ) : (
+                                    <select value={form.employmentStatus || ""} onChange={(e) => set("employmentStatus", e.target.value)}>
+                                        <option value="">Select status</option>
+                                        {employmentStatuses.map((s) => (
+                                            <option key={s._id} value={s._id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                )}
                             </Field>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <Field label="Department" icon={Briefcase}>
-                                <select value={form.department || ""} onChange={(e) => set("department", e.target.value)}>
-                                    <option value="">Select department</option>
-                                    {departments.map((d) => (
-                                        <option key={d._id} value={d._id}>{d.name}</option>
-                                    ))}
-                                </select>
+                                {departments.length === 1 ? (
+                                    <input type="text" readOnly value={departments[0].name} className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+                                ) : (
+                                    <select value={form.department || ""} onChange={(e) => set("department", e.target.value)}>
+                                        <option value="">Select department</option>
+                                        {departments.map((d) => (
+                                            <option key={d._id} value={d._id}>{d.name}</option>
+                                        ))}
+                                    </select>
+                                )}
                             </Field>
                             <Field label="Date of Birth" icon={Calendar}>
                                 <input type="date" value={form.dateOfBirth || ""} onChange={(e) => set("dateOfBirth", e.target.value)} />
+                            </Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <Field label="Aadhar Date of Birth" icon={Calendar}>
+                                <input type="date" value={form.aadharDateOfBirth || ""} onChange={(e) => set("aadharDateOfBirth", e.target.value)} />
                             </Field>
                         </div>
                     </section>
@@ -337,12 +404,13 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                             <Users size={13} /> Reporting Hierarchy
                         </p>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reporting Manager</label>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reporting Manager *</label>
                             <ManagerPicker
                                 value={form.reportingTo || ""}
                                 onChange={(id) => set("reportingTo", id)}
                                 options={managerOptions}
                             />
+                            {errors.reportingTo && <p className="text-xs text-red-500 mt-1">{errors.reportingTo}</p>}
                         </div>
                     </section>
                 </div>
